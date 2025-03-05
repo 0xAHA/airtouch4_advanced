@@ -67,3 +67,17 @@ As this is a custom version of an official integration, the process is manual, b
    1. Main aircon system (likely labelled AC 0) - the same as the original integration
    2. Climate entities - for those zones which have an Individual Temperature Control (ITC) unit in the room
    3. Fan Entities - for those zones which do NOT have an ITC, and therefore aren't represented properly as Climate entities in the standard integration.
+
+Example dashboard:
+
+Note the following in the dashboard below:
+
+1. Air-Con is the main "AC 0" entity created, for which the HVAC_MODE and Fan speed is available, as standard
+2. The example zones that DO have an ITC are Master, Kitchen and Bed 4. Note that you can only control the target temperature, so there's no need to try and show the HVAC_MODE feature
+3. The example zones that DO NOT have an ITC are Bed2, Bed3, Office, Rumpus, and thus are represented as Fans.
+   1. Note that the main AC unit is off, but the Bed2 zone fan is still enabled, and therefore represented in HA to match the AirTouch4 panel/app state
+   2. Fan zones maintain the last set fan speed as noted by the state information and represented in the AirTouch4 panel/app state
+
+ ![1741150897752.png](./1741150897752.png)
+
+ ![1741150722623.png](./1741150722623.png)
