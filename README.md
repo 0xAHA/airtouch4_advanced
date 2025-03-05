@@ -4,8 +4,6 @@ Custom version of official AirTouch4 Integration from Home Assistant
 
 ⚠️This integration is neither AirTouch official nor Home Assistant official. **Use at your own risk.** ⚠️
 
-
-
 **Objective**:
 
 The main issue/lacking feature in the core integration is that zones without an ITC (inidividual temperature control) are not represented correctly, ie:
@@ -26,11 +24,9 @@ Zones without an ITC are now created as Fan entities, enabling:
 
 These fan zones are represented in the same way that the AirTouch panel/phone app shows them, ie: they will still show as On if the zone is enabled, but the main AC system is Off.
 
-
 ## Installation
 
 As this is a custom version of an official integration, the process is manual, but fairly straight forward.
-
 
 ### Manual Install
 
@@ -54,7 +50,6 @@ As this is a custom version of an official integration, the process is manual, b
         └── strings.json
 ```
 
-
 ## Configuration
 
 1. In Home Assistant, add the AirTouch integration as you would a standard integration (Settings > Devices & Services > Add Integration.
@@ -68,7 +63,7 @@ As this is a custom version of an official integration, the process is manual, b
    2. Climate entities - for those zones which have an Individual Temperature Control (ITC) unit in the room
    3. Fan Entities - for those zones which do NOT have an ITC, and therefore aren't represented properly as Climate entities in the standard integration.
 
-Example dashboard:
+## Example dashboard:
 
 Note the following in the dashboard below:
 
@@ -78,6 +73,6 @@ Note the following in the dashboard below:
    1. Note that the main AC unit is off, but the Bed2 zone fan is still enabled, and therefore represented in HA to match the AirTouch4 panel/app state
    2. Fan zones maintain the last set fan speed as noted by the state information and represented in the AirTouch4 panel/app state
 
- ![1741150897752.png](./1741150897752.png)
+![1741150897752.png](./1741150897752.png)
 
- ![1741150722623.png](./1741150722623.png)
+![1741150722623.png](./1741150722623.png)
