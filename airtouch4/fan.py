@@ -99,7 +99,7 @@ class AirtouchFan(CoordinatorEntity, FanEntity):
     @property
     def percentage(self):
         """Return the fan speed as a percentage."""
-        return self._unit.get("open_percent", 0)  # Use dictionary key safely
+        return getattr(self._unit, "OpenPercent", 0)
 
     @property
     def percentage_step(self):
@@ -120,9 +120,17 @@ class AirtouchFan(CoordinatorEntity, FanEntity):
         if percentage is not None:
             await self.async_set_percentage(percentage)
 
+        # 🛠️ Force HA to update immediately
+        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
+
     async def async_turn_off(self, **kwargs):
         """Turn the fan off."""
         await self._airtouch.TurnGroupOff(self._group_number)
+
+        # 🛠️ Force HA to update immediately
+        await self.coordinator.async_request_refresh()
+        self.async_write_ha_state()
 
     async def async_set_percentage(self, percentage):
         """Set fan speed as a percentage, turning off if 0% is selected."""

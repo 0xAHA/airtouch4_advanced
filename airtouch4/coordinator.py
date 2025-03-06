@@ -33,20 +33,26 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
         if self.airtouch.Status != AirTouchStatus.OK:
             raise UpdateFailed("Airtouch connection issue")
 
+        # Ensure PowerState exists before accessing it
         return {
             "acs": [
-                {"ac_number": ac.AcNumber, "is_on": ac.IsOn}
+                {
+                    "ac_number": ac.AcNumber,
+                    "is_on": ac.IsOn,
+                    "power_state": getattr(ac, "PowerState", "Unknown"),  # ✅ Safeguard PowerState
+                }
                 for ac in self.airtouch.GetAcs()
             ],
             "groups": [
                 {
                     "group_number": group.GroupNumber,
                     "group_name": group.GroupName,
-                    "is_on": group.PowerState == "On",  # ✅ Ensures correct ON/OFF state
-                    "power_state": group.PowerState,  # ✅ Ensure PowerState is included
-                    "open_percent": group.OpenPercentage,  # ✅ Correctly pass OpenPercentage
+                    "is_on": group.IsOn,
+                    "power_state": getattr(group, "PowerState", "Unknown"),  # ✅ Fix Here
+                    "open_percent": getattr(group, "OpenPercent", 0),  # Ensure OpenPercent exists
                 }
                 for group in self.airtouch.GetGroups()
             ],
         }
+
 

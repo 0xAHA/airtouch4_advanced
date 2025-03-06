@@ -25,6 +25,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from . import AirTouch4ConfigEntry
 from .const import DOMAIN
 
+from airtouch4pyapi.airtouch import AirTouchGroup, AirTouchAc
+
 AT_TO_HA_STATE = {
     "Heat": HVACMode.HEAT,
     "Cool": HVACMode.COOL,
@@ -66,21 +68,26 @@ async def async_setup_entry(
     config_entry: AirTouch4ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Set up the Airtouch 4."""
+    """Set up the AirTouch 4 Climate entities."""
     coordinator = config_entry.runtime_data
     info = coordinator.data
-    entities: list[ClimateEntity] = [
+
+    # Only add groups that have `TemperatureControl` (ITC Zones)
+    climate_entities = [
         AirtouchGroup(coordinator, group["group_number"], info)
         for group in info["groups"]
         if coordinator.airtouch.GetGroupByGroupNumber(group["group_number"]).ControlMethod == "TemperatureControl"
     ]
-    entities.extend(
+
+    # Only add AC units (Climate devices)
+    climate_entities.extend(
         AirtouchAC(coordinator, ac["ac_number"], info) for ac in info["acs"]
     )
 
-    _LOGGER.debug(" Found entities %s", entities)
+    _LOGGER.debug(" Found climate entities %s", climate_entities)
 
-    async_add_entities(entities)
+    async_add_entities(climate_entities)
+
 
 
 class AirtouchAC(CoordinatorEntity, ClimateEntity):
@@ -115,18 +122,48 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
 
     @callback
     def _handle_coordinator_update(self):
-        self._unit = self._airtouch.GetAcs()[self._ac_number]
-        return super()._handle_coordinator_update()
+        """Update internal state from coordinator data."""
+
+        _LOGGER.debug("_handle_coordinator_update: Current AC unit is %s (%s)", self._unit, type(self._unit))
+
+        # Ensure this is an AC update
+        if not isinstance(self._unit, AirTouchAc):
+            _LOGGER.error("❌ _handle_coordinator_update: Expected AC but got %s", type(self._unit))
+            return  # Prevent crash
+
+        # Fetch updated AC list
+        acs_data = self._airtouch.GetAcs()
+
+        if not isinstance(acs_data, list):
+            _LOGGER.error("❌ _handle_coordinator_update: `GetAcs()` did not return a list! Got: %s", type(acs_data))
+            return  # Prevent crash
+
+        if self._ac_number >= len(acs_data):
+            _LOGGER.error("❌ _handle_coordinator_update: AC index %s is out of range! Total ACs: %s", self._ac_number, len(acs_data))
+            return  # Prevent crash
+
+        updated_unit = acs_data[self._ac_number]  # ✅ Use index instead of `get()`
+
+        if updated_unit is None:
+            _LOGGER.error("❌ _handle_coordinator_update: No updated AC data found for AC %s", self._ac_number)
+            return  # Prevent crash
+
+        self._unit = updated_unit
+        _LOGGER.debug("_handle_coordinator_update: ✅ Updated AC unit to %s (%s)", self._unit, type(self._unit))
+
+        super()._handle_coordinator_update()
+
 
     @property
     def current_temperature(self):
         """Return the current temperature."""
-        return self._unit.Temperature
+        return getattr(self._unit, "Temperature", None)
 
     @property
     def fan_mode(self):
         """Return fan mode of the AC this group belongs to."""
-        return AT_TO_HA_FAN_SPEED[self._airtouch.acs[self._ac_number].AcFanSpeed]
+        ac_unit = self._airtouch.acs[self._ac_number]
+        return AT_TO_HA_FAN_SPEED.get(getattr(ac_unit, "AcFanSpeed", "Auto"), FAN_AUTO)
 
     @property
     def fan_modes(self):
@@ -136,38 +173,46 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        """Return hvac target hvac state."""
-        is_off = getattr(self._airtouch.acs[self._ac_number], "PowerState", "Off") == "Off"
-        if is_off:
-            return HVACMode.OFF
+        """Return HVAC mode, differentiating between ACs and ITC zones."""
+        
+        if isinstance(self._unit, AirTouchAc):  # ✅ AC UNIT LOGIC
+            is_off = getattr(self._unit, "PowerState", "Off") == "Off"
+            return HVACMode.OFF if is_off else AT_TO_HA_STATE.get(self._unit.AcMode, HVACMode.OFF)
 
-        return AT_TO_HA_STATE[self._airtouch.acs[self._ac_number].AcMode]
+        if isinstance(self._unit, AirTouchGroup):  # ✅ ITC ZONE LOGIC
+            if self._unit.ControlMethod == "TemperatureControl":
+                return HVACMode.FAN_ONLY if self._unit.PowerState == "On" else HVACMode.OFF
 
-        return AT_TO_HA_STATE[self._airtouch.acs[self._ac_number].AcMode]
+        _LOGGER.error("hvac_mode called on unexpected unit type: %s", type(self._unit))
+        return HVACMode.OFF  # Fallback
 
     @property
     def hvac_modes(self):
-        """Return the list of available operation modes."""
-        airtouch_modes = self._airtouch.GetSupportedCoolingModesForAc(self._ac_number)
-        modes = [AT_TO_HA_STATE[mode] for mode in airtouch_modes]
-        modes.append(HVACMode.OFF)
-        return modes
+        """Return available HVAC modes, distinguishing ACs and ITC zones."""
+        
+        # AC UNIT: Supports full HVAC modes
+        if isinstance(self._unit, AirTouchAc):  
+            return [HVACMode.OFF, HVACMode.HEAT, HVACMode.COOL, HVACMode.AUTO, HVACMode.DRY, HVACMode.FAN_ONLY]
+
+        # ITC ZONE: Only supports OFF and FAN_ONLY
+        if isinstance(self._unit, AirTouchGroup) and self._unit.ControlMethod == "TemperatureControl":
+            return [HVACMode.OFF, HVACMode.FAN_ONLY]
+
+        _LOGGER.error("hvac_modes: Unexpected unit type for %s", self._unit)
+        return []  # Prevent crashes by returning empty list
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
-        """Set new operation mode."""
-        if hvac_mode not in HA_STATE_TO_AT:
+        """Set HVAC mode for ITC zones."""
+        if hvac_mode not in [HVACMode.OFF, HVACMode.FAN_ONLY]:
             raise ValueError(f"Unsupported HVAC mode: {hvac_mode}")
+
+        _LOGGER.debug("Setting ITC zone %s to %s", self._group_number, hvac_mode)
 
         if hvac_mode == HVACMode.OFF:
             await self.async_turn_off()
-            return
-        await self._airtouch.SetCoolingModeForAc(
-            self._ac_number, HA_STATE_TO_AT[hvac_mode]
-        )
-        # in case it isn't already, unless the HVAC mode was off, then the ac should be on
-        await self.async_turn_on()
-        self._unit = self._airtouch.GetAcs()[self._ac_number]
-        _LOGGER.debug("Setting operation mode of %s to %s", self._ac_number, hvac_mode)
+        else:
+            await self.async_turn_on()
+
         self.async_write_ha_state()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
@@ -183,17 +228,19 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
         self.async_write_ha_state()
 
     async def async_turn_on(self) -> None:
-        """Turn on."""
-        _LOGGER.debug("Turning %s on", self.unique_id)
-        # in case ac is not on. Airtouch turns itself off if no groups are turned on
-        # (even if groups turned back on)
-        await self._airtouch.TurnAcOn(self._ac_number)
+        """Turn on ITC zone (Fan Only)."""
+        _LOGGER.debug("Turning ON ITC Zone: %s", self.unique_id)
+        await self._airtouch.TurnGroupOn(self._group_number)
+        await self.coordinator.async_request_refresh()  # Force update
+        self.async_write_ha_state()
 
     async def async_turn_off(self) -> None:
-        """Turn off."""
-        _LOGGER.debug("Turning %s off", self.unique_id)
-        await self._airtouch.TurnAcOff(self._ac_number)
+        """Turn off ITC zone."""
+        _LOGGER.debug("Turning OFF ITC Zone: %s", self.unique_id)
+        await self._airtouch.TurnGroupOff(self._group_number)
+        await self.coordinator.async_request_refresh()  # Force update
         self.async_write_ha_state()
+
 
 
 class AirtouchGroup(CoordinatorEntity, ClimateEntity):
@@ -227,8 +274,26 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
 
     @callback
     def _handle_coordinator_update(self):
-        self._unit = self._airtouch.GetGroupByGroupNumber(self._group_number)
-        return super()._handle_coordinator_update()
+        """Update internal state from coordinator data."""
+
+        _LOGGER.debug("_handle_coordinator_update: Current Group is %s (%s)", self._unit, type(self._unit))
+
+        # Ensure we only process Group updates in this class
+        if not isinstance(self._unit, AirTouchGroup):
+            _LOGGER.error("❌ _handle_coordinator_update: Expected Group but got %s", type(self._unit))
+            return  # Prevent crash
+
+        # Fetch updated Group data
+        updated_unit = self._airtouch.GetGroupByGroupNumber(self._group_number)
+
+        if updated_unit is None:
+            _LOGGER.error("❌ _handle_coordinator_update: No updated Group data found for Group %s", self._group_number)
+            return  # Prevent crash
+
+        self._unit = updated_unit
+        _LOGGER.debug("_handle_coordinator_update: ✅ Updated Group to %s (%s)", self._unit, type(self._unit))
+
+        super()._handle_coordinator_update()
 
     @property
     def min_temp(self):
@@ -252,13 +317,13 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
 
     @property
     def hvac_mode(self):
-        """Return hvac target hvac state."""
-        # there are other power states that aren't 'on' but still count as on (eg. 'Turbo')
-        is_off = self._unit.PowerState == "Off"
-        if is_off:
-            return HVACMode.OFF
+        """Return hvac target hvac state for a group."""
+        if not hasattr(self._unit, "PowerState"):  # Ensure this isn't an AC
+            _LOGGER.error("hvac_mode called on Group instead of AC: %s", self._unit.GroupName)
+            return None  # Prevent crashes
 
-        return HVACMode.FAN_ONLY
+        is_off = self._unit.PowerState == "Off"
+        return HVACMode.OFF if is_off else HVACMode.FAN_ONLY  # Groups should not have full HVAC modes
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new operation mode."""
