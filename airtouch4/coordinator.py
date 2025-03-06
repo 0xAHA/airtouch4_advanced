@@ -13,6 +13,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 SCAN_INTERVAL = timedelta(seconds=10)
 
+
 class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching Airtouch data."""
 
@@ -39,7 +40,9 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                 {
                     "ac_number": ac.AcNumber,
                     "is_on": ac.IsOn,
-                    "power_state": getattr(ac, "PowerState", "Unknown"),  # ✅ Safeguard PowerState
+                    "power_state": getattr(
+                        ac, "PowerState", "Unknown"
+                    ),  # ✅ Safeguard PowerState
                 }
                 for ac in self.airtouch.GetAcs()
             ],
@@ -48,11 +51,13 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     "group_number": group.GroupNumber,
                     "group_name": group.GroupName,
                     "is_on": group.IsOn,
-                    "power_state": getattr(group, "PowerState", "Unknown"),  # ✅ Fix Here
-                    "open_percent": getattr(group, "OpenPercent", 0),  # Ensure OpenPercent exists
+                    "power_state": getattr(
+                        group, "PowerState", "Unknown"
+                    ),  # ✅ Fix Here
+                    "open_percent": getattr(
+                        group, "OpenPercent", 0
+                    ),  # Ensure OpenPercent exists
                 }
                 for group in self.airtouch.GetGroups()
             ],
         }
-
-
