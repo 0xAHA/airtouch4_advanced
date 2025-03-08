@@ -7,5 +7,5 @@
   "iot_class": "local_polling",
   "loggers": ["airtouch4pyapi"],
   "requirements": ["airtouch4pyapi==1.0.5"],
-  "version": "1.1.2"
+  "version": "2.0.0-beta"
 }
