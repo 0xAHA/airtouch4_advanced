@@ -15,3 +15,6 @@ jobs:
         uses: "hacs/action@main"
         with:
           category: "integration"
+          repository: doenau/airtouch4
+          branch: v2
+          github_token: ${{ secrets.GITHUB_TOKEN }}
