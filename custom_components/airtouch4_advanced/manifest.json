@@ -1,5 +1,5 @@
 {
-  "domain": "airtouch4",
+  "domain": "airtouch4_advanced",
   "name": "AirTouch 4",
   "codeowners": ["@doenau"],
   "config_flow": true,
