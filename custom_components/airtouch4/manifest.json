@@ -4,6 +4,7 @@
   "codeowners": ["@doenau"],
   "config_flow": true,
   "documentation": "https://github.com/doenau/airtouch4",
+  "issue_tracker": "https://github.com/doenau/airtouch4/issues",
   "iot_class": "local_polling",
   "loggers": ["airtouch4pyapi"],
   "requirements": ["airtouch4pyapi==1.0.5"],
