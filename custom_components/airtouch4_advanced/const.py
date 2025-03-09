@@ -1,4 +1,4 @@
-DOMAIN = "airtouch4"
+DOMAIN = "airtouch4_advanced"
 
 # Setup modes from the config flow
 MODE_DEFAULT = "default"
@@ -17,7 +17,7 @@ FAN_SPEED_MAPPING = {
 }
 
 # Constants for manual (non-ITC) climate zones
-MIN_FAN_SPEED = 20    # Even when target is reached, run at this minimum speed
-MAX_FAN_SPEED = 100   # Maximum fan open percentage (for Turbo/Powerful)
+MIN_FAN_SPEED = 20  # Even when target is reached, run at this minimum speed
+MAX_FAN_SPEED = 100  # Maximum fan open percentage (for Turbo/Powerful)
 AUTO_MAX_TEMP = 40.0  # For COOL mode: when current reaches this, run at MAX_FAN_SPEED
 AUTO_MIN_TEMP = 15.0  # For HEAT mode: when current reaches this, run at MAX_FAN_SPEED
