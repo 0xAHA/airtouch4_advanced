@@ -1,0 +1,16 @@
+# Ignore VSCode settings folder
+.vscode/
+
+# Virtual environments (adjust names as needed)
+env/
+venv/
+.venv/
+ENV/
+
+# ----------------------
+# Python-related files
+# ----------------------
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
