@@ -1,0 +1,41 @@
+name: Auto Tag & Release
+
+on:
+  push:
+    branches:
+      - main  # Change if your default branch is different
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract version from manifest.json
+        id: get_version
+        run: echo "VERSION=$(jq -r .version custom_components/your_integration/manifest.json)" >> $GITHUB_ENV
+
+      - name: Check if tag exists
+        id: check_tag
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${VERSION}"; then
+            echo "Tag v${VERSION} already exists. Exiting."
+            exit 0
+          fi
+
+      - name: Create Git Tag
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git tag v${VERSION}
+          git push origin v${VERSION}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${VERSION}
+          name: Release v${VERSION}
+          body: "🚀 New version v${VERSION} is now available!"
+          draft: false
+          prerelease: ${{ contains(env.VERSION, 'beta') }}
