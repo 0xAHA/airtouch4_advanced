@@ -34,8 +34,6 @@ As this is a custom version of an official integration, the installation process
 
 This custom integration is available in the [Home Assistant Community Store (HACS)](https://hacs.xyz/).
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=doenau&repository=airtouch4_advanced)
-
 **Steps:**
 
 1. Install HACS if you haven't already.
@@ -54,14 +52,15 @@ This custom integration is available in the [Home Assistant Community Store (HAC
    ├── configuration.yaml
    └── custom_components
        └── airtouch4_advanced
+           └── translations
+               └── en.json
            ├── __init__.py
            ├── climate.py
            ├── config_flow.py
            ├── const.py
            ├── coordinator.py
            ├── fan.py
-           ├── manifest.json
-           └── strings.json
+           └── manifest.json
    ```
 4. Restart Home Assistant.
 
@@ -73,12 +72,16 @@ This custom integration is available in the [Home Assistant Community Store (HAC
 3. The integration will attempt to automatically detect the IP address of your AirTouch4 system. If this is not successful, enter the IP address of your AirTouch4 system (tablet/panel).
    ![Enter IP Address](./1741414596830.png)
 4. Select the zone configuration mode:
+
    ![1742434942911.png](./1742434942911.png)
 
-   * **Default Mode:** Configures all zones as standard climate entities.
-   * **Non-ITC zones as Fans:** Creates zones without ITC as fan entities, providing percentage control similar to the AirTouch app.
-   * **Non-ITC zones as Climate:** Allows selecting a temperature sensor for zones without ITC, creating climate entities that automatically adjust the fan/damper percentage based on the target temperature.
-     ![1742435054772.png](./1742435054772.png)
+   **Default Mode:** Configures all zones as standard climate entities.
+
+   **Non-ITC zones as Fans:** Creates zones without ITC as fan entities, providing percentage control similar to the AirTouch app.
+
+   **Non-ITC zones as Climate:** Allows selecting a temperature sensor for zones without ITC, creating climate entities that automatically adjust the fan/damper percentage based on the target temperature.
+
+   ![1742435054772.png](./1742435054772.png)
 5. The integration will add the main Aircon system (likely labelled "AC 0") and climate zones or fans based on the selected setup mode. In all cases, zones with an ITC will continue to be created as standard climate zones.
 
 ## Example Dashboard
