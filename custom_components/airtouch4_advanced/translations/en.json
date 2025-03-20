@@ -1,0 +1,32 @@
+{
+  "config": {
+    "abort": {
+      "already_configured": "This AirTouch 4 device is already configured."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Please check the IP address and try again.",
+      "no_units": "Could not find any AirTouch 4 Groups.",
+      "missing_sensor": "Please select a sensor for each zone."
+    },
+    "step": {
+      "user": {
+        "title": "Configure AirTouch4",
+        "description": "Set up your AirTouch 4 connection details.",
+        "data": {
+          "host": "AirTouch 4 IP Address"
+        }
+      },
+      "zone_mode": {
+        "title": "Zone Configuration Mode",
+        "description": "Select how your zones should be set up.",
+        "data": {
+          "setup_mode": "Zone Mode"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "Temperature Sensors for Non-ITC Zones",
+        "description": "Each non-ITC zone requires a temperature sensor for operation."
+      }
+    }
+  }
+}
