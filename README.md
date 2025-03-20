@@ -53,7 +53,7 @@ This custom integration is available in the [Home Assistant Community Store (HAC
    └── custom_components
        └── airtouch4_advanced
            └── translations
-               └── en.json
+           |   └── en.json
            ├── __init__.py
            ├── climate.py
            ├── config_flow.py
@@ -69,8 +69,11 @@ This custom integration is available in the [Home Assistant Community Store (HAC
 1. In Home Assistant, go to **Settings > Devices & Services** and click **Add Integration**.
 2. Search for "AirTouch4". The custom integration should have a red "custom integration" box icon.
    ![1742435174300.png](./1742435174300.png)
+   
 3. The integration will attempt to automatically detect the IP address of your AirTouch4 system. If this is not successful, enter the IP address of your AirTouch4 system (tablet/panel).
+
    ![Enter IP Address](./1741414596830.png)
+  
 4. Select the zone configuration mode:
 
    ![1742434942911.png](./1742434942911.png)
@@ -103,7 +106,7 @@ The following examples show dashboards for each setup mode:
 
 **Non-ITC zones as Climate entity:** Zones without ITC are climate zones with real current temperature values based on selected sensors. The "Ali" zone shows an example of the open percentage (fan speed) attribute.
 
-![Climate Entity Mode Example](./1741415656794.png)
+      ![Climate Entity Mode Example](./1741415656794.png)
 
 ### To-Do
 
