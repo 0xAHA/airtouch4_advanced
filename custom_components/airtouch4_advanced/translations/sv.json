@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "Konfigurera AirTouch4",
+        "description": "Ställ in anslutningsdetaljer för din AirTouch 4.",
+        "data": {
+          "host": "AirTouch 4 IP-adress"
+        }
+      },
+      "validate_device": {
+        "title": "Validera AirTouch-enhet",
+        "description": "Validerar anslutning till AirTouch-enhet på {ip}..."
+      },
+      "zone_mode": {
+        "title": "Zonkonfigurationsläge",
+        "description": "Välj hur dina zoner ska konfigureras.",
+        "data": {
+          "setup_mode": "Zonläge"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "Temperatursensorer för icke-ITC-zoner",
+        "description": "Varje icke-ITC-zon kräver en temperatursensor för korrekt temperaturkontroll."
+      }
+    },
+    "error": {
+      "cannot_connect": "Anslutningen misslyckades. Kontrollera IP-adressen och försök igen.",
+      "no_units": "Inga AirTouch 4-grupper hittades.",
+      "no_devices_found": "Inga AirTouch-enheter hittades på nätverket.",
+      "missing_sensor": "Välj en sensor för varje zon.",
+      "no_zones": "Inga icke-ITC-zoner som kräver temperatursensorer hittades.",
+      "unknown": "Ett oväntat fel inträffade."
+    },
+    "abort": {
+      "already_configured": "Denna AirTouch 4-enhet är redan konfigurerad.",
+      "reconfigure_not_supported": "Omkonfiguration är inte tillgänglig i det aktuella läget.",
+      "cannot_connect": "Kunde inte ansluta till AirTouch-systemet.",
+      "unexpected_error": "Ett oväntat fel inträffade.",
+      "no_zones": "Inga icke-ITC-zoner hittades trots non_itc_climate-läge."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch-alternativ",
+        "description": "Uppdatera din AirTouch-konfiguration."
+      },
+      "setup_mode": {
+        "title": "Zonkonfigurationsläge",
+        "description": "Välj hur dina zoner ska hanteras."
+      },
+      "nonitc_sensors": {
+        "title": "Konfigurera temperatursensorer",
+        "description": "Välj temperatursensorer för icke-ITC-zoner. Dessa sensorer kommer att användas för temperaturavläsningar i klimatenheter."
+      }
+    },
+    "error": {
+      "unknown": "Ett oväntat fel inträffade.",
+      "no_zones": "Inga icke-ITC-zoner som kräver temperatursensorer hittades."
+    },
+    "abort": {
+      "reconfigure_not_supported": "Omkonfiguration är inte tillgänglig i det aktuella läget.",
+      "cannot_connect": "Kunde inte ansluta till AirTouch-systemet.",
+      "unexpected_error": "Ett oväntat fel inträffade.",
+      "no_zones": "Inga icke-ITC-zoner hittades trots non_itc_climate-läge."
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "Standardläge (Alla zoner som klimat)",
+        "nonitc_fan": "Icke-ITC-zoner som fläktar",
+        "nonitc_climate": "Icke-ITC-zoner som klimat (Kräver temperatursensor)"
+      }
+    }
+  }
+}

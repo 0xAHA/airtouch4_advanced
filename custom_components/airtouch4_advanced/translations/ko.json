@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "AirTouch4 구성",
+        "description": "AirTouch 4 연결 세부 정보를 설정합니다.",
+        "data": {
+          "host": "AirTouch 4 IP 주소"
+        }
+      },
+      "validate_device": {
+        "title": "AirTouch 장치 검증",
+        "description": "{ip}에서 AirTouch 장치에 연결 검증 중..."
+      },
+      "zone_mode": {
+        "title": "구역 구성 모드",
+        "description": "구역 설정 방법을 선택하세요.",
+        "data": {
+          "setup_mode": "구역 모드"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "비ITC 구역용 온도 센서",
+        "description": "각 비ITC 구역은 적절한 온도 제어를 위해 온도 센서가 필요합니다."
+      }
+    },
+    "error": {
+      "cannot_connect": "연결에 실패했습니다. IP 주소를 확인하고 다시 시도하세요.",
+      "no_units": "AirTouch 4 그룹을 찾을 수 없습니다.",
+      "no_devices_found": "네트워크에서 AirTouch 장치를 찾을 수 없습니다.",
+      "missing_sensor": "각 구역에 센서를 선택하세요.",
+      "no_zones": "온도 센서가 필요한 비ITC 구역을 찾을 수 없습니다.",
+      "unknown": "예기치 않은 오류가 발생했습니다."
+    },
+    "abort": {
+      "already_configured": "이 AirTouch 4 장치는 이미 구성되어 있습니다.",
+      "reconfigure_not_supported": "현재 모드에서는 재구성을 사용할 수 없습니다.",
+      "cannot_connect": "AirTouch 시스템에 연결할 수 없습니다.",
+      "unexpected_error": "예기치 않은 오류가 발생했습니다.",
+      "no_zones": "non_itc_climate 모드임에도 비ITC 구역을 찾을 수 없습니다."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch 옵션",
+        "description": "AirTouch 구성을 업데이트합니다."
+      },
+      "setup_mode": {
+        "title": "구역 구성 모드",
+        "description": "구역 처리 방법을 선택하세요."
+      },
+      "nonitc_sensors": {
+        "title": "온도 센서 구성",
+        "description": "비ITC 구역용 온도 센서를 선택하세요. 이 센서들은 기후 엔티티의 온도 판독에 사용됩니다."
+      }
+    },
+    "error": {
+      "unknown": "예기치 않은 오류가 발생했습니다.",
+      "no_zones": "온도 센서가 필요한 비ITC 구역을 찾을 수 없습니다."
+    },
+    "abort": {
+      "reconfigure_not_supported": "현재 모드에서는 재구성을 사용할 수 없습니다.",
+      "cannot_connect": "AirTouch 시스템에 연결할 수 없습니다.",
+      "unexpected_error": "예기치 않은 오류가 발생했습니다.",
+      "no_zones": "non_itc_climate 모드임에도 비ITC 구역을 찾을 수 없습니다."
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "기본 모드 (모든 구역을 기후로)",
+        "nonitc_fan": "비ITC 구역을 팬으로",
+        "nonitc_climate": "비ITC 구역을 기후로 (온도 센서 필요)"
+      }
+    }
+  }
+}

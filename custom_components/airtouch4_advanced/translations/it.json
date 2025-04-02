@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "Configura AirTouch4",
+        "description": "Configura i dettagli di connessione del tuo AirTouch 4.",
+        "data": {
+          "host": "Indirizzo IP AirTouch 4"
+        }
+      },
+      "validate_device": {
+        "title": "Convalida dispositivo AirTouch",
+        "description": "Convalida della connessione al dispositivo AirTouch su {ip}..."
+      },
+      "zone_mode": {
+        "title": "Modalità di configurazione delle zone",
+        "description": "Seleziona come devono essere configurate le tue zone.",
+        "data": {
+          "setup_mode": "Modalità zona"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "Sensori di temperatura per zone senza ITC",
+        "description": "Ogni zona senza ITC richiede un sensore di temperatura per un controllo adeguato della temperatura."
+      }
+    },
+    "error": {
+      "cannot_connect": "Connessione fallita. Verifica l'indirizzo IP e riprova.",
+      "no_units": "Nessun gruppo AirTouch 4 trovato.",
+      "no_devices_found": "Nessun dispositivo AirTouch trovato sulla rete.",
+      "missing_sensor": "Seleziona un sensore per ogni zona.",
+      "no_zones": "Nessuna zona senza ITC che richiede sensori di temperatura è stata trovata.",
+      "unknown": "Si è verificato un errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo dispositivo AirTouch 4 è già configurato.",
+      "reconfigure_not_supported": "La riconfigurazione non è disponibile nella modalità corrente.",
+      "cannot_connect": "Impossibile connettersi al sistema AirTouch.",
+      "unexpected_error": "Si è verificato un errore imprevisto.",
+      "no_zones": "Nessuna zona senza ITC trovata nonostante la modalità non_itc_climate."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opzioni AirTouch",
+        "description": "Aggiorna la tua configurazione AirTouch."
+      },
+      "setup_mode": {
+        "title": "Modalità di configurazione delle zone",
+        "description": "Scegli come devono essere gestite le tue zone."
+      },
+      "nonitc_sensors": {
+        "title": "Configura sensori di temperatura",
+        "description": "Seleziona sensori di temperatura per zone senza ITC. Questi sensori saranno utilizzati per le letture di temperatura nelle entità clima."
+      }
+    },
+    "error": {
+      "unknown": "Si è verificato un errore imprevisto.",
+      "no_zones": "Nessuna zona senza ITC che richiede sensori di temperatura è stata trovata."
+    },
+    "abort": {
+      "reconfigure_not_supported": "La riconfigurazione non è disponibile nella modalità corrente.",
+      "cannot_connect": "Impossibile connettersi al sistema AirTouch.",
+      "unexpected_error": "Si è verificato un errore imprevisto.",
+      "no_zones": "Nessuna zona senza ITC trovata nonostante la modalità non_itc_climate."
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "Modalità predefinita (Tutte le zone come clima)",
+        "nonitc_fan": "Zone senza ITC come ventilatori",
+        "nonitc_climate": "Zone senza ITC come clima (Richiede sensore di temperatura)"
+      }
+    }
+  }
+}

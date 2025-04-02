@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "配置AirTouch4",
+        "description": "設置您的AirTouch 4連接詳情。",
+        "data": {
+          "host": "AirTouch 4 IP地址"
+        }
+      },
+      "validate_device": {
+        "title": "驗證AirTouch設備",
+        "description": "正在驗證與{ip}處AirTouch設備的連接..."
+      },
+      "zone_mode": {
+        "title": "區域配置模式",
+        "description": "選擇如何設置您的區域。",
+        "data": {
+          "setup_mode": "區域模式"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "非ITC區域的溫度感應器",
+        "description": "每個非ITC區域都需要一個溫度感應器以進行適當的溫度控制。"
+      }
+    },
+    "error": {
+      "cannot_connect": "連接失敗。請檢查IP地址並重試。",
+      "no_units": "未找到任何AirTouch 4組。",
+      "no_devices_found": "網絡上未找到AirTouch設備。",
+      "missing_sensor": "請為每個區域選擇一個感應器。",
+      "no_zones": "未找到需要溫度感應器的非ITC區域。",
+      "unknown": "發生意外錯誤。"
+    },
+    "abort": {
+      "already_configured": "此AirTouch 4設備已配置。",
+      "reconfigure_not_supported": "當前模式下不支持重新配置。",
+      "cannot_connect": "無法連接到AirTouch系統。",
+      "unexpected_error": "發生意外錯誤。",
+      "no_zones": "儘管處於non_itc_climate模式，但未找到非ITC區域。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch選項",
+        "description": "更新您的AirTouch配置。"
+      },
+      "setup_mode": {
+        "title": "區域配置模式",
+        "description": "選擇如何處理您的區域。"
+      },
+      "nonitc_sensors": {
+        "title": "配置溫度感應器",
+        "description": "為非ITC區域選擇溫度感應器。這些感應器將用於氣候實體中的溫度讀數。"
+      }
+    },
+    "error": {
+      "unknown": "發生意外錯誤。",
+      "no_zones": "未找到需要溫度感應器的非ITC區域。"
+    },
+    "abort": {
+      "reconfigure_not_supported": "當前模式下不支持重新配置。",
+      "cannot_connect": "無法連接到AirTouch系統。",
+      "unexpected_error": "發生意外錯誤。",
+      "no_zones": "儘管處於non_itc_climate模式，但未找到非ITC區域。"
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "預設模式（所有區域作為氣候）",
+        "nonitc_fan": "非ITC區域作為風扇",
+        "nonitc_climate": "非ITC區域作為氣候（需要溫度感應器）"
+      }
+    }
+  }
+}

@@ -1,5 +1,5 @@
 DOMAIN = "airtouch4_advanced"
-
+PLATFORMS = ["climate", "fan"] 
 # Setup modes from the config flow
 MODE_DEFAULT = "default"
 MODE_NONITC_FAN = "nonitc_fan"

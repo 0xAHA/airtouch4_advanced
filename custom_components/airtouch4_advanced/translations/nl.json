@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "AirTouch4 configureren",
+        "description": "Stel uw AirTouch 4 verbindingsgegevens in.",
+        "data": {
+          "host": "AirTouch 4 IP-adres"
+        }
+      },
+      "validate_device": {
+        "title": "AirTouch-apparaat valideren",
+        "description": "Verbinding met AirTouch-apparaat op {ip} valideren..."
+      },
+      "zone_mode": {
+        "title": "Zoneconfiguratiemodus",
+        "description": "Selecteer hoe uw zones moeten worden ingesteld.",
+        "data": {
+          "setup_mode": "Zonemodus"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "Temperatuursensoren voor niet-ITC-zones",
+        "description": "Elke niet-ITC-zone vereist een temperatuursensor voor goede temperatuurregeling."
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbinding mislukt. Controleer het IP-adres en probeer opnieuw.",
+      "no_units": "Geen AirTouch 4 groepen gevonden.",
+      "no_devices_found": "Geen AirTouch-apparaten gevonden op het netwerk.",
+      "missing_sensor": "Selecteer een sensor voor elke zone.",
+      "no_zones": "Geen niet-ITC-zones gevonden die temperatuursensoren nodig hebben.",
+      "unknown": "Er is een onverwachte fout opgetreden."
+    },
+    "abort": {
+      "already_configured": "Dit AirTouch 4 apparaat is al geconfigureerd.",
+      "reconfigure_not_supported": "Herconfiguratie is niet beschikbaar in de huidige modus.",
+      "cannot_connect": "Kan geen verbinding maken met het AirTouch-systeem.",
+      "unexpected_error": "Er is een onverwachte fout opgetreden.",
+      "no_zones": "Geen niet-ITC-zones gevonden ondanks non_itc_climate modus."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch opties",
+        "description": "Werk uw AirTouch-configuratie bij."
+      },
+      "setup_mode": {
+        "title": "Zoneconfiguratiemodus",
+        "description": "Kies hoe uw zones moeten worden behandeld."
+      },
+      "nonitc_sensors": {
+        "title": "Configureer temperatuursensoren",
+        "description": "Selecteer temperatuursensoren voor niet-ITC-zones. Deze sensoren worden gebruikt voor temperatuurmetingen in klimaatentiteiten."
+      }
+    },
+    "error": {
+      "unknown": "Er is een onverwachte fout opgetreden.",
+      "no_zones": "Geen niet-ITC-zones gevonden die temperatuursensoren nodig hebben."
+    },
+    "abort": {
+      "reconfigure_not_supported": "Herconfiguratie is niet beschikbaar in de huidige modus.",
+      "cannot_connect": "Kan geen verbinding maken met het AirTouch-systeem.",
+      "unexpected_error": "Er is een onverwachte fout opgetreden.",
+      "no_zones": "Geen niet-ITC-zones gevonden ondanks non_itc_climate modus."
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "Standaardmodus (Alle zones als klimaat)",
+        "nonitc_fan": "Niet-ITC-zones als ventilatoren",
+        "nonitc_climate": "Niet-ITC-zones als klimaat (Temperatuursensor vereist)"
+      }
+    }
+  }
+}

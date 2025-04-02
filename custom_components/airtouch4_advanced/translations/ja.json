@@ -1,0 +1,79 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "AirTouch4の設定",
+        "description": "AirTouch 4の接続詳細を設定します。",
+        "data": {
+          "host": "AirTouch 4のIPアドレス"
+        }
+      },
+      "validate_device": {
+        "title": "AirTouchデバイスの検証",
+        "description": "{ip}のAirTouchデバイスへの接続を検証しています..."
+      },
+      "zone_mode": {
+        "title": "ゾーン設定モード",
+        "description": "ゾーンの設定方法を選択してください。",
+        "data": {
+          "setup_mode": "ゾーンモード"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "非ITCゾーンの温度センサー",
+        "description": "非ITCゾーンごとに、適切な温度制御のために温度センサーが必要です。"
+      }
+    },
+    "error": {
+      "cannot_connect": "接続に失敗しました。IPアドレスを確認して再試行してください。",
+      "no_units": "AirTouch 4グループが見つかりませんでした。",
+      "no_devices_found": "ネットワーク上にAirTouchデバイスが見つかりませんでした。",
+      "missing_sensor": "各ゾーンにセンサーを選択してください。",
+      "no_zones": "温度センサーが必要な非ITCゾーンが見つかりませんでした。",
+      "unknown": "予期しないエラーが発生しました。"
+    },
+    "abort": {
+      "already_configured": "このAirTouch 4デバイスはすでに設定されています。",
+      "reconfigure_not_supported": "現在のモードでは再設定はできません。",
+      "cannot_connect": "AirTouchシステムに接続できませんでした。",
+      "unexpected_error": "予期しないエラーが発生しました。",
+      "no_zones": "non_itc_climateモードにもかかわらず、非ITCゾーンが見つかりませんでした。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouchオプション",
+        "description": "AirTouch設定を更新します。"
+      },
+      "setup_mode": {
+        "title": "ゾーン設定モード",
+        "description": "ゾーンの処理方法を選択してください。"
+      },
+      "nonitc_sensors": {
+        "title": "温度センサーの設定",
+        "description": "非ITCゾーンの温度センサーを選択してください。これらのセンサーは気候エンティティの温度読み取りに使用されます。"
+      }
+    },
+    "error": {
+      "unknown": "予期しないエラーが発生しました。",
+      "no_zones": "温度センサーが必要な非ITCゾーンが見つかりませんでした。"
+    },
+    "abort": {
+      "reconfigure_not_supported": "現在のモードでは再設定はできません。",
+      "cannot_connect": "AirTouchシステムに接続できませんでした。",
+      "unexpected_error": "予期しないエラーが発生しました。",
+      "no_zones": "non_itc_climateモードにもかかわらず、非ITCゾーンが見つかりませんでした。"
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "デフォルトモード（すべてのゾーンを気候として）",
+        "nonitc_fan": "非ITCゾーンをファンとして",
+        "nonitc_climate": "非ITCゾーンを気候として（温度センサーが必要）"
+      }
+    }
+  }
+}

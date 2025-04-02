@@ -1,13 +1,6 @@
 {
   "config": {
-    "abort": {
-      "already_configured": "This AirTouch 4 device is already configured."
-    },
-    "error": {
-      "cannot_connect": "Failed to connect. Please check the IP address and try again.",
-      "no_units": "Could not find any AirTouch 4 Groups.",
-      "missing_sensor": "Please select a sensor for each zone."
-    },
+    "title": "AirTouch4",
     "step": {
       "user": {
         "title": "Configure AirTouch4",
@@ -15,6 +8,10 @@
         "data": {
           "host": "AirTouch 4 IP Address"
         }
+      },
+      "validate_device": {
+        "title": "Validate AirTouch Device",
+        "description": "Validating connection to AirTouch device at {ip}..."
       },
       "zone_mode": {
         "title": "Zone Configuration Mode",
@@ -25,7 +22,57 @@
       },
       "nonitc_sensors": {
         "title": "Temperature Sensors for Non-ITC Zones",
-        "description": "Each non-ITC zone requires a temperature sensor for operation."
+        "description": "Each non-ITC zone requires a temperature sensor for proper temperature control."
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect. Please check the IP address and try again.",
+      "no_units": "Could not find any AirTouch 4 Groups.",
+      "no_devices_found": "No AirTouch devices found on the network.",
+      "missing_sensor": "Please select a sensor for each zone.",
+      "no_zones": "No non-ITC zones found that require temperature sensors.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This AirTouch 4 device is already configured.",
+      "reconfigure_not_supported": "Reconfiguration is not available in the current mode.",
+      "cannot_connect": "Failed to connect to the AirTouch system.",
+      "unexpected_error": "An unexpected error occurred.",
+      "no_zones": "No non-ITC zones found despite being in non_itc_climate mode."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch Options",
+        "description": "Update your AirTouch configuration."
+      },
+      "setup_mode": {
+        "title": "Zone Configuration Mode",
+        "description": "Choose how your zones should be handled."
+      },
+      "nonitc_sensors": {
+        "title": "Configure Temperature Sensors",
+        "description": "Select temperature sensors for non-ITC zones. These sensors will be used for temperature readings in climate entities."
+      }
+    },
+    "error": {
+      "unknown": "An unexpected error occurred.",
+      "no_zones": "No non-ITC zones found that require temperature sensors."
+    },
+    "abort": {
+      "reconfigure_not_supported": "Reconfiguration is not available in the current mode.",
+      "cannot_connect": "Failed to connect to the AirTouch system.",
+      "unexpected_error": "An unexpected error occurred.",
+      "no_zones": "No non-ITC zones found despite being in non_itc_climate mode."
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "Default Mode (All zones as climate)",
+        "nonitc_fan": "Non-ITC Zones as Fans",
+        "nonitc_climate": "Non-ITC Zones as Climate (Requires Temperature Sensor)"
       }
     }
   }

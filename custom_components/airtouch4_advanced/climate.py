@@ -84,11 +84,24 @@ async def async_setup_entry(
          * If setup_mode == MODE_NONITC_CLIMATE, create ManualNonITCClimate.
          * Otherwise (default), treat them as standard AirtouchGroup.
     """
+    _LOGGER.debug("async_setup_entry called with options: %s", entry.options)
+
     data = hass.data[DOMAIN][entry.entry_id]
     coordinator: AirtouchDataUpdateCoordinator = data["coordinator"]
 
-    setup_mode = entry.data.get("setup_mode", MODE_DEFAULT)
-    sensor_map = entry.data.get("nonitc_sensors", {})
+    # Corrected fallback logic
+    if "nonitc_sensors" in entry.options:
+        sensor_map = entry.options["nonitc_sensors"]
+    else:
+        sensor_map = entry.data.get("nonitc_sensors", {})
+
+    if "setup_mode" in entry.options:
+        setup_mode = entry.options["setup_mode"]
+    else:
+        setup_mode = entry.data.get("setup_mode", MODE_DEFAULT)
+
+    _LOGGER.debug("Using sensor_map: %s", sensor_map)
+    _LOGGER.debug("Using setup_mode: %s", setup_mode)
 
     info = coordinator.data  # {"acs": [...], "groups": [...]}
     climate_entities = []
@@ -124,6 +137,7 @@ async def async_setup_entry(
                     group_number,
                     sensor_entity_id,
                 )
+                _LOGGER.debug("ManualNonITCClimate: Creating with sensor_entity_id=%s", sensor_entity_id)
                 climate_entities.append(
                     ManualNonITCClimate(coordinator, group_number, sensor_entity_id)
                 )
@@ -133,13 +147,12 @@ async def async_setup_entry(
     _LOGGER.debug("Adding climate entities: %s", climate_entities)
 
     # Store ManualNonITCClimate entities for periodic fan adjustments.
-    hass.data.setdefault(DOMAIN, {}).setdefault("manual_climates", [])
+    hass.data.setdefault(DOMAIN, {})["manual_climates"] = []
     for entity in climate_entities:
         if isinstance(entity, ManualNonITCClimate):
             hass.data[DOMAIN]["manual_climates"].append(entity)
 
     async_add_entities(climate_entities)
-
 
 class AirtouchAC(CoordinatorEntity, ClimateEntity):
     """Representation of an AirTouch4 AC unit as a climate entity."""
@@ -167,6 +180,8 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
 
     @property
     def current_temperature(self) -> float | None:
+        currTemp = getattr(self._unit, "Temperature", None)
+        _LOGGER.debug("Current Temperature for group is %s", currTemp)
         return getattr(self._unit, "Temperature", None)
 
     @property
@@ -345,7 +360,6 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
         super().__init__(coordinator)
         self._group_number = group_number
         self._airtouch = coordinator.airtouch
-        # sensor_entity_id now is properly read (from sensor_map using str(key) or int key)
         self._sensor_entity_id = sensor_entity_id
         _LOGGER.debug(
             "ManualNonITCClimate for group %s initialized with sensor_entity_id: %s",
@@ -354,13 +368,12 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
         )
 
         group_obj = self._airtouch.GetGroupByGroupNumber(group_number)
-        self._attr_name = group_obj.GroupName  # Use the group name as-is
+        self._attr_name = group_obj.GroupName
         self._attr_unique_id = f"manual_nonitc_climate_{group_number}"
         self._target_temp = 24.0
 
     @callback
     def _handle_coordinator_update(self):
-        # For manual non-ITC climate, we don't update the target temperature.
         super()._handle_coordinator_update()
 
     @property
@@ -453,7 +466,6 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def extra_state_attributes(self) -> dict:
-        """Return extra attributes including current open percentage from coordinator data."""
         groups = self.coordinator.data.get("groups", [])
         group_data = next(
             (g for g in groups if g["group_number"] == self._group_number), {}
@@ -469,48 +481,37 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
     def _calculate_open_percentage(
         self, current: float, target: float, ac_mode: str
     ) -> int:
-        """
-        Calculate desired open percentage based on the absolute difference between
-        current and target temperature.
-
-        For COOL modes (e.g., "Cool", "AutoCool", "Auto", "Dry"):
-        - If current <= target, return MIN_FAN_SPEED (to keep the fan running minimally).
-        - Otherwise, linearly scale the difference so that when current equals AUTO_MAX_TEMP,
-            the fan runs at MAX_FAN_SPEED.
-
-        For HEAT modes (e.g., "Heat", "AutoHeat"):
-        - If current >= target, return MIN_FAN_SPEED.
-        - Otherwise, linearly scale the difference so that when current equals AUTO_MIN_TEMP,
-            the fan runs at MAX_FAN_SPEED.
-        """
         if ac_mode in ["Cool", "AutoCool", "Auto", "Dry"]:
             if current <= target:
                 return MIN_FAN_SPEED
             fraction = min((current - target) / (AUTO_MAX_TEMP - target), 1.0)
-            desired = int(MIN_FAN_SPEED + fraction * (MAX_FAN_SPEED - MIN_FAN_SPEED))
-            return desired
+            return int(MIN_FAN_SPEED + fraction * (MAX_FAN_SPEED - MIN_FAN_SPEED))
         elif ac_mode in ["Heat", "AutoHeat"]:
             if current >= target:
                 return MIN_FAN_SPEED
             fraction = min((target - current) / (target - AUTO_MIN_TEMP), 1.0)
-            desired = int(MIN_FAN_SPEED + fraction * (MAX_FAN_SPEED - MIN_FAN_SPEED))
-            return desired
+            return int(MIN_FAN_SPEED + fraction * (MAX_FAN_SPEED - MIN_FAN_SPEED))
         else:
-            # For other modes, return the current open percentage from the device.
-            group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
-            return getattr(group_obj, "OpenPercentage", MIN_FAN_SPEED)
+            try:
+                group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
+                return getattr(group_obj, "OpenPercentage", MIN_FAN_SPEED)
+            except KeyError:
+                _LOGGER.warning(
+                    "Group %s not found during open percentage calculation.",
+                    self._group_number,
+                )
+                return MIN_FAN_SPEED
 
     async def async_adjust_fan_speed(self) -> None:
-        """
-        Adjust the fan open percentage based on the current temperature (from the sensor)
-        and the stored target temperature.
+        try:
+            group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
+        except KeyError:
+            _LOGGER.warning(
+                "Group %s not found; skipping fan speed adjustment.",
+                self._group_number,
+            )
+            return
 
-        Only adjust if the non-ITC zone is ON and its associated AC unit is ON.
-        The desired open percentage is computed via _calculate_open_percentage,
-        then rounded to the nearest 5%.
-        """
-        # Get the current group state from the API
-        group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
         if getattr(group_obj, "PowerState", "Off") == "Off":
             _LOGGER.debug(
                 "async_adjust_fan_speed: Group %s is off; skipping adjustment",
@@ -518,7 +519,6 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             )
             return
 
-        # Get the associated AC unit
         belongs_to = getattr(group_obj, "BelongsToAc", None)
         if belongs_to is None:
             _LOGGER.debug(
@@ -527,7 +527,16 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             )
             return
 
-        ac_unit = self._airtouch.GetAcs()[belongs_to]
+        try:
+            ac_unit = self._airtouch.GetAcs()[belongs_to]
+        except (IndexError, KeyError):
+            _LOGGER.warning(
+                "Associated AC %s for group %s not found; skipping adjustment.",
+                belongs_to,
+                self._group_number,
+            )
+            return
+
         if getattr(ac_unit, "PowerState", "Off") == "Off":
             _LOGGER.debug(
                 "async_adjust_fan_speed: Associated AC %s is off; skipping adjustment for group %s",
@@ -536,7 +545,6 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             )
             return
 
-        # Get current temperature from the sensor
         current_temp = self.current_temperature
         if current_temp is None:
             _LOGGER.debug(
@@ -545,11 +553,9 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             )
             return
 
-        # Calculate desired open percentage using _calculate_open_percentage.
         desired = self._calculate_open_percentage(
             current_temp, self._target_temp, getattr(ac_unit, "AcMode", "Fan")
         )
-        # Round the result to the nearest 5%
         desired = round(desired / 5) * 5
 
         _LOGGER.debug(

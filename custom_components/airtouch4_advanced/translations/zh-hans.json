@@ -1,0 +1,67 @@
+{
+  "config": {
+    "title": "AirTouch4",
+    "step": {
+      "user": {
+        "title": "配置AirTouch4",
+        "description": "设置您的AirTouch 4连接详情。",
+        "data": {
+          "host": "AirTouch 4 IP地址"
+        }
+      },
+      "validate_device": {
+        "title": "验证AirTouch设备",
+        "description": "正在验证与{ip}处AirTouch设备的连接..."
+      },
+      "zone_mode": {
+        "title": "区域配置模式",
+        "description": "选择如何设置您的区域。",
+        "data": {
+          "setup_mode": "区域模式"
+        }
+      },
+      "nonitc_sensors": {
+        "title": "非ITC区域的温度传感器",
+        "description": "每个非ITC区域都需要一个温度传感器以进行适当的温度控制。"
+      }
+    },
+    "error": {
+      "cannot_connect": "连接失败。请检查IP地址并重试。",
+      "no_units": "未找到任何AirTouch 4组。",
+      "no_devices_found": "网络上未找到AirTouch设备。",
+      "missing_sensor": "请为每个区域选择一个传感器。",
+      "no_zones": "未找到需要温度传感器的非ITC区域。",
+      "unknown": "发生意外错误。"
+    },
+    "abort": {
+      "already_configured": "此AirTouch 4设备已配置。",
+      "reconfigure_not_supported": "当前模式下不支持重新配置。",
+      "cannot_connect": "无法连接到AirTouch系统。",
+      "unexpected_error": "发生意外错误。",
+      "no_zones": "尽管处于non_itc_climate模式，但未找到非ITC区域。"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "AirTouch选项",
+        "description": "更新您的AirTouch配置。"
+      },
+      "setup_mode": {
+        "title": "区域配置模式",
+        "description": "选择如何处理您的区域。"
+      },
+      "nonitc_sensors": {
+        "title": "配置温度传感器",
+        "description": "为非ITC区域选择温度传感器。这些传感器将用于气候实体中的温度读数。"
+      }
+    },
+    "error": {
+      "unknown": "发生意外错误。",
+      "no_zones": "未找到需要温度传感器的非ITC区域。"
+    },
+    "abort": {
+      "reconfigure_not_supported": "当前模式下不支持重新配置。",
+      "cannot_connect": "无法连接到AirTouch系统。",
+      "unexpected_error": "发生意外错误。",
+      "no
