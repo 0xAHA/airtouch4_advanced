@@ -64,4 +64,16 @@
       "reconfigure_not_supported": "当前模式下不支持重新配置。",
       "cannot_connect": "无法连接到AirTouch系统。",
       "unexpected_error": "发生意外错误。",
-      "no
+      "no_zones": "尽管处于non_itc_climate模式，但未找到非ITC区域。"
+    }
+  },
+  "selector": {
+    "setup_mode": {
+      "options": {
+        "default": "默认模式（所有区域作为气候）",
+        "nonitc_fan": "非ITC区域作为风扇",
+        "nonitc_climate": "非ITC区域作为气候（需要温度传感器）"
+      }
+    }
+  }
+}
