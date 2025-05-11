@@ -42,6 +42,9 @@ This custom integration addresses key limitations in the official AirTouch4 inte
 
 ### Option 1: HACS Installation (Recommended)
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2Fdoenau%2Fairtouch4_advanced&owner=doenau&category=Integration)
+
+
 1. Install [HACS](https://hacs.xyz/) if you haven't already
 2. Open HACS in Home Assistant
 3. Go to "Integrations" tab
