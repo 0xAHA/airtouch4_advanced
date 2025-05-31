@@ -1,12 +1,12 @@
 {
   "domain": "airtouch4_advanced",
   "name": "AirTouch 4",
-  "codeowners": ["@doenau"],
+  "codeowners": ["@0xAHA"],
   "config_flow": true,
-  "documentation": "https://github.com/doenau/airtouch4",
+  "documentation": "https://github.com/0xAHA/airtouch4",
   "iot_class": "local_polling",
-  "issue_tracker": "https://github.com/doenau/airtouch4/issues",
+  "issue_tracker": "https://github.com/0xAHA/airtouch4/issues",
   "loggers": ["airtouch4pyapi"],
   "requirements": ["airtouch4pyapi==1.0.5"],
-  "version": "2.0.2"
+  "version": "2.0.3"
 }

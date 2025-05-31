@@ -1,7 +1,7 @@
 # 🌡️ AirTouch4 Advanced
 
 ![HACS Badge](https://img.shields.io/badge/HACS-Custom-orange.svg)
-![Version](https://img.shields.io/badge/Version-2.0.2-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.0.3-blue.svg)
 
 > Custom version of the official AirTouch4 Integration for Home Assistant with enhanced zone control and configuration options.
 
@@ -46,7 +46,7 @@ This custom integration addresses key limitations in the official AirTouch4 inte
 2. Open HACS in Home Assistant
 3. Go to "Integrations" tab
 4. Click the three dots in the top right corner and select "Custom repositories"
-5. Add `https://github.com/doenau/airtouch4_advanced` as a custom repository (Category: Integration)
+5. Add `https://github.com/0xAHA/airtouch4_advanced` as a custom repository (Category: Integration)
 6. Search for "Airtouch4 Advanced"
 7. Click the download button (⬇️)
 8. Restart Home Assistant
@@ -172,7 +172,7 @@ If you encounter issues with the integration:
    * Damper control not responding: Ensure your AirTouch system is online
 3. **Submit Issues**
 
-   If you encounter persistent issues, please report them on the [GitHub repository](https://github.com/doenau/airtouch4/issues) with:
+   If you encounter persistent issues, please report them on the [GitHub repository](https://github.com/0xAHA/airtouch4_advanced/issues) with:
 
    * Home Assistant version
    * AirTouch4 Advanced version
@@ -180,6 +180,10 @@ If you encounter issues with the integration:
    * Steps to reproduce the issue
 
 ## 📝 Changelog
+
+### Version 2.0.3
+
+- ✅ Nothing of note - Github user handle change only
 
 ### Version 2.0.2
 
