@@ -3,6 +3,9 @@
 ![HACS Badge](https://img.shields.io/badge/HACS-Custom-orange.svg)
 ![Version](https://img.shields.io/badge/Version-2.0.3-blue.svg)
 
+<a href="https://www.buymeacoffee.com/0xAHA" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+
+
 > Custom version of the official AirTouch4 Integration for Home Assistant with enhanced zone control and configuration options.
 
 ⚠️ **Disclaimer:** This integration is neither officially supported by AirTouch nor Home Assistant. **Use at your own risk.** ⚠️
