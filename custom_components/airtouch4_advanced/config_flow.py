@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from typing import Any
 import logging
 import voluptuous as vol
 import socket
@@ -34,7 +34,7 @@ class AirtouchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Return an options flow handler."""
         return AirtouchOptionsFlow(config_entry)
 
-    async def async_discover_devices(self) -> List[str]:
+    async def async_discover_devices(self) -> list[str]:
         """Discover all available AirTouch4 devices on the network."""
         broadcast_message = b"HF-A11ASSISTHREAD"
         broadcast_port = 49004
