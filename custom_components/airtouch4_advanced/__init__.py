@@ -14,7 +14,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.CLIMATE, Platform.FAN, Platform.SWITCH, Platform.NUMBER]
+PLATFORMS = [Platform.CLIMATE, Platform.FAN, Platform.SWITCH, Platform.COVER]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the AirTouch4 component."""
