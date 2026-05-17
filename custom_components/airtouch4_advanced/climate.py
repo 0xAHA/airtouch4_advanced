@@ -269,6 +269,13 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
         return getattr(self._unit, "TargetSetpoint", None)
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
+        manual_overrides = self.hass.data.get(DOMAIN, {}).get("manual_overrides", {})
+        if manual_overrides.get(self._group_number, False):
+            _LOGGER.debug(
+                "Group %s manual override active; ignoring set_temperature",
+                self._group_number,
+            )
+            return
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is None:
             _LOGGER.debug("No temperature provided for group %s", self._group_number)
@@ -503,6 +510,14 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
                 return MIN_FAN_SPEED
 
     async def async_adjust_fan_speed(self) -> None:
+        manual_overrides = self.hass.data.get(DOMAIN, {}).get("manual_overrides", {})
+        if manual_overrides.get(self._group_number, False):
+            _LOGGER.debug(
+                "Group %s manual override active; skipping auto-adjustment",
+                self._group_number,
+            )
+            return
+
         try:
             group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
         except KeyError:

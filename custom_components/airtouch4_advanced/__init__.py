@@ -14,7 +14,7 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
-PLATFORMS = [Platform.CLIMATE, Platform.FAN]
+PLATFORMS = [Platform.CLIMATE, Platform.FAN, Platform.SWITCH, Platform.COVER]
 
 async def async_setup(hass: HomeAssistant, config: dict):
     """Set up the AirTouch4 component."""
@@ -63,6 +63,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Initialize manual_climates list if it doesn't exist
     if "manual_climates" not in hass.data[DOMAIN]:
         hass.data[DOMAIN]["manual_climates"] = []
+
+    # Initialize manual override dict (group_number -> bool) for runtime damper control
+    hass.data[DOMAIN].setdefault("manual_overrides", {})
 
     # Set up periodic adjustment for manual climate entities
     async def adjust_all_manual_climates(now):
