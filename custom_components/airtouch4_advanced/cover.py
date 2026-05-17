@@ -89,7 +89,7 @@ class ManualDamperCover(CoordinatorEntity, CoverEntity):
         return self.current_cover_position == 0
 
     async def async_set_cover_position(self, **kwargs) -> None:
-        position = int(kwargs.get("position", 0))
+        position = round(int(kwargs.get("position", 0)) / 5) * 5
         _LOGGER.debug(
             "ManualDamperCover: setting group %s to %s%%",
             self._group_number,
