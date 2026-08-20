@@ -9,12 +9,19 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+# Number of consecutive failed updates after which the AirTouch client is
+# recreated from scratch, in case a failed exchange left it in a poisoned
+# half-initialised state that a fresh UpdateInfo() call can't recover from.
+RECONNECT_AFTER_FAILURES = 3
+
 class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching AirTouch data."""
 
-    def __init__(self, hass, airtouch):
+    def __init__(self, hass, airtouch, host):
         """Initialize global AirTouch data updater."""
         self.airtouch = airtouch
+        self._host = host
+        self._consecutive_failures = 0
         super().__init__(
             hass,
             _LOGGER,
@@ -22,11 +29,34 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
             update_interval=SCAN_INTERVAL,
         )
 
+    def _register_failure(self):
+        """Track consecutive failures and recreate the client if it's likely poisoned."""
+        self._consecutive_failures += 1
+        if self._consecutive_failures >= RECONNECT_AFTER_FAILURES:
+            _LOGGER.warning(
+                "AirTouch at %s failed %d consecutive updates; recreating connection",
+                self._host,
+                self._consecutive_failures,
+            )
+            from airtouch4pyapi.airtouch import AirTouch
+
+            self.airtouch = AirTouch(self._host)
+            self._consecutive_failures = 0
+
     async def _async_update_data(self):
         """Fetch data from AirTouch."""
-        await self.airtouch.UpdateInfo()
-        if self.airtouch.Status != AirTouchStatus.OK:
-            raise UpdateFailed("AirTouch connection issue")
+        try:
+            await self.airtouch.UpdateInfo()
+            if self.airtouch.Status != AirTouchStatus.OK:
+                raise UpdateFailed("AirTouch connection issue")
+        except UpdateFailed:
+            self._register_failure()
+            raise
+        except Exception as err:
+            self._register_failure()
+            raise UpdateFailed(f"Error communicating with AirTouch: {err}") from err
+
+        self._consecutive_failures = 0
         return {
             "acs": [
                 {

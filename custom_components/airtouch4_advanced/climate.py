@@ -114,8 +114,14 @@ async def async_setup_entry(
     # 2) Group Entities
     for group_dict in info["groups"]:
         group_number = group_dict["group_number"]
-        group_obj = coordinator.airtouch.GetGroupByGroupNumber(group_number)
-        control_method = getattr(group_obj, "ControlMethod", "Unknown")
+        try:
+            group_obj = coordinator.airtouch.GetGroupByGroupNumber(group_number)
+            control_method = getattr(group_obj, "ControlMethod", "Unknown")
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not read control method for group %s: %s", group_number, err
+            )
+            control_method = "Unknown"
 
         if control_method == "TemperatureControl":
             climate_entities.append(AirtouchGroup(coordinator, group_number))
@@ -168,14 +174,29 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
     def __init__(self, coordinator: AirtouchDataUpdateCoordinator, ac_number: int):
         super().__init__(coordinator)
         self._ac_number = ac_number
-        self._airtouch = coordinator.airtouch
         self._unit = self._airtouch.GetAcs()[ac_number]
         self._attr_unique_id = f"ac_{ac_number}"
         self._attr_name = f"AC {ac_number}"
 
+    @property
+    def _airtouch(self):
+        # Read live off the coordinator rather than caching it: the
+        # coordinator may swap in a freshly-reconnected client after
+        # repeated failures, and a cached reference would keep talking
+        # to the dead one.
+        return self.coordinator.airtouch
+
     @callback
     def _handle_coordinator_update(self):
-        self._unit = self._airtouch.GetAcs()[self._ac_number]
+        try:
+            self._unit = self._airtouch.GetAcs()[self._ac_number]
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "AC %s missing from AirTouch state; keeping last known state (%s)",
+                self._ac_number,
+                err,
+            )
+            return
         super()._handle_coordinator_update()
 
     @property
@@ -250,14 +271,27 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
     def __init__(self, coordinator: AirtouchDataUpdateCoordinator, group_number: int):
         super().__init__(coordinator)
         self._group_number = group_number
-        self._airtouch = coordinator.airtouch
         self._unit = self._airtouch.GetGroupByGroupNumber(group_number)
         self._attr_unique_id = f"group_{group_number}"
         self._attr_name = getattr(self._unit, "GroupName", f"Zone {group_number}")
 
+    @property
+    def _airtouch(self):
+        # See AirtouchAC._airtouch: always read the live client off the
+        # coordinator instead of caching it.
+        return self.coordinator.airtouch
+
     @callback
     def _handle_coordinator_update(self):
-        self._unit = self._airtouch.GetGroupByGroupNumber(self._group_number)
+        try:
+            self._unit = self._airtouch.GetGroupByGroupNumber(self._group_number)
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Group %s missing from AirTouch state; keeping last known state (%s)",
+                self._group_number,
+                err,
+            )
+            return
         super()._handle_coordinator_update()
 
     @property
@@ -322,7 +356,7 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
         belongs_to = getattr(self._unit, "BelongsToAc", 0)
         try:
             return getattr(self._airtouch.acs[belongs_to], "MinSetpoint", 16)
-        except (IndexError, AttributeError):
+        except (IndexError, KeyError, AttributeError, TypeError):
             return 16
 
     @property
@@ -330,7 +364,7 @@ class AirtouchGroup(CoordinatorEntity, ClimateEntity):
         belongs_to = getattr(self._unit, "BelongsToAc", 0)
         try:
             return getattr(self._airtouch.acs[belongs_to], "MaxSetpoint", 30)
-        except (IndexError, AttributeError):
+        except (IndexError, KeyError, AttributeError, TypeError):
             return 30
 
 
@@ -359,7 +393,6 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
     ):
         super().__init__(coordinator)
         self._group_number = group_number
-        self._airtouch = coordinator.airtouch
         self._sensor_entity_id = sensor_entity_id
         _LOGGER.debug(
             "ManualNonITCClimate for group %s initialized with sensor_entity_id: %s",
@@ -367,10 +400,22 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             sensor_entity_id,
         )
 
-        group_obj = self._airtouch.GetGroupByGroupNumber(group_number)
-        self._attr_name = group_obj.GroupName
+        try:
+            group_obj = self._airtouch.GetGroupByGroupNumber(group_number)
+            self._attr_name = group_obj.GroupName
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not read name for group %s: %s", group_number, err
+            )
+            self._attr_name = f"Zone {group_number}"
         self._attr_unique_id = f"manual_nonitc_climate_{group_number}"
         self._target_temp = 24.0
+
+    @property
+    def _airtouch(self):
+        # See AirtouchAC._airtouch: always read the live client off the
+        # coordinator instead of caching it.
+        return self.coordinator.airtouch
 
     @callback
     def _handle_coordinator_update(self):
@@ -378,7 +423,10 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
 
     @property
     def hvac_mode(self) -> HVACMode:
-        group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
+        try:
+            group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
+        except (IndexError, KeyError, AttributeError):
+            return HVACMode.OFF
         if getattr(group_obj, "PowerState", "Off") == "Off":
             return HVACMode.OFF
         return HVACMode.FAN_ONLY
@@ -495,7 +543,7 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
             try:
                 group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
                 return getattr(group_obj, "OpenPercentage", MIN_FAN_SPEED)
-            except KeyError:
+            except (IndexError, KeyError, AttributeError):
                 _LOGGER.warning(
                     "Group %s not found during open percentage calculation.",
                     self._group_number,
@@ -505,7 +553,7 @@ class ManualNonITCClimate(CoordinatorEntity, ClimateEntity):
     async def async_adjust_fan_speed(self) -> None:
         try:
             group_obj = self._airtouch.GetGroupByGroupNumber(self._group_number)
-        except KeyError:
+        except (IndexError, KeyError, AttributeError):
             _LOGGER.warning(
                 "Group %s not found; skipping fan speed adjustment.",
                 self._group_number,
