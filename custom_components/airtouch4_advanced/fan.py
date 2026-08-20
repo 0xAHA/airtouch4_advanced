@@ -62,20 +62,33 @@ class AirtouchFan(CoordinatorEntity, FanEntity):
     def __init__(self, coordinator: AirtouchDataUpdateCoordinator, group_number: int):
         super().__init__(coordinator)
         self._group_number = group_number
-        self._airtouch = coordinator.airtouch
 
         # We'll store the coordinator's dict data for easy access.
         self._dict_unit = {}
 
         # Use the library to get the default name, then slugify it for a friendly entity_id.
-        group_obj = self._airtouch.GetGroupByGroupNumber(group_number)
-        default_name = getattr(group_obj, "GroupName", f"Zone {group_number}")
+        try:
+            group_obj = self._airtouch.GetGroupByGroupNumber(group_number)
+            default_name = getattr(group_obj, "GroupName", f"Zone {group_number}")
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not read name for group %s: %s", group_number, err
+            )
+            default_name = f"Zone {group_number}"
         from homeassistant.util import slugify  # import here to generate a safe string
         slug_name = slugify(default_name) or f"zone_{group_number}"
 
         self._attr_name = default_name
         self.entity_id = f"fan.{slug_name}"
         self._attr_unique_id = f"fan_{group_number}"
+
+    @property
+    def _airtouch(self):
+        # Always read the live client off the coordinator instead of caching
+        # it: the coordinator may swap in a freshly-reconnected client after
+        # repeated failures, and a cached reference would keep talking to
+        # the dead one.
+        return self.coordinator.airtouch
 
     @callback
     def _handle_coordinator_update(self):
@@ -131,13 +144,17 @@ class AirtouchFan(CoordinatorEntity, FanEntity):
         )
         await self._airtouch.TurnGroupOn(self._group_number)
         if percentage is not None:
+            # async_set_percentage() below already refreshes and writes state.
             await self.async_set_percentage(percentage)
+            return
+        await self.coordinator.async_request_refresh()
         self.async_write_ha_state()
 
     async def async_turn_off(self, **kwargs):
         """Turn the fan off."""
         _LOGGER.debug("Turning OFF fan zone %s", self._group_number)
         await self._airtouch.TurnGroupOff(self._group_number)
+        await self.coordinator.async_request_refresh()
         self.async_write_ha_state()
 
     async def async_set_percentage(self, percentage: int):
@@ -148,4 +165,5 @@ class AirtouchFan(CoordinatorEntity, FanEntity):
         else:
             _LOGGER.debug("Setting fan zone %s to %s%%", self._group_number, percentage)
             await self._airtouch.SetGroupToPercentage(self._group_number, int(percentage))
+            await self.coordinator.async_request_refresh()
         self.async_write_ha_state()

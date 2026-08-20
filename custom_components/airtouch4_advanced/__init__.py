@@ -10,6 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 
 from .coordinator import AirtouchDataUpdateCoordinator
+from .listener import AirtouchBroadcastListener
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,7 +42,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         from airtouch4pyapi.airtouch import AirTouch
         
         airtouch = AirTouch(host)
-        coordinator = AirtouchDataUpdateCoordinator(hass, airtouch)
+        coordinator = AirtouchDataUpdateCoordinator(hass, airtouch, host)
         await coordinator.async_config_entry_first_refresh()
 
         if not coordinator.airtouch.GetAcs():
@@ -52,10 +53,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         _LOGGER.exception("Error setting up AirTouch integration: %s", err)
         raise ConfigEntryNotReady(f"Failed to connect to AirTouch at {host}: {err}")
 
+    # Start a best-effort listener for the console's status broadcasts so
+    # zone/AC changes made from the AirTouch app or a wall panel are reflected
+    # near-instantly instead of waiting for the next poll. It never parses
+    # the broadcast payload - it just triggers a coordinator refresh - and a
+    # failed/dropped connection has no effect on normal polling.
+    listener = AirtouchBroadcastListener(hass, coordinator, host)
+    listener.start()
+
     # Initialize data structure in domain data
     hass.data.setdefault(DOMAIN, {})
     hass.data[DOMAIN][entry.entry_id] = {
         "coordinator": coordinator,
+        "listener": listener,
         "setup_mode": setup_mode,
         "sensor_map": sensor_map
     }
@@ -102,7 +112,11 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         cancel_interval = hass.data[DOMAIN][entry.entry_id].get("cancel_interval")
         if cancel_interval:
             cancel_interval()
-    
+
+        listener = hass.data[DOMAIN][entry.entry_id].get("listener")
+        if listener:
+            await listener.stop()
+
     # Unload the platforms
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     

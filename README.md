@@ -1,7 +1,7 @@
 # 🌡️ AirTouch4 Advanced
 
 ![HACS Badge](https://img.shields.io/badge/HACS-Custom-orange.svg)
-![Version](https://img.shields.io/badge/Version-2.0.3-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.1.0-blue.svg)
 
 <a href="https://www.buymeacoffee.com/0xAHA" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
@@ -183,6 +183,13 @@ If you encounter issues with the integration:
    * Steps to reproduce the issue
 
 ## 📝 Changelog
+
+### Version 2.1.0 (Pre-release)
+
+- ✅ Fixed a bug where a failed connection to the AirTouch4 console could leave the integration's state tracking permanently frozen (coordinator and entity updates would crash on every cycle) until the integration was manually reloaded (#4)
+- ✅ The integration now recovers automatically: repeated connection failures trigger a fresh reconnect, and a bad update cycle no longer crashes entities - they just keep their last known state until the next successful poll
+- ✅ Fan entities (`fan.async_turn_on`/`async_turn_off`/`async_set_percentage`) now request an immediate state refresh after sending a command, instead of waiting up to the full 60s scan interval
+- ✅ Added a lightweight listener for the AirTouch4 console's status broadcasts, so zone/AC changes made from the AirTouch app or a wall panel are reflected near-instantly instead of waiting for the next poll
 
 ### Version 2.0.3
 
