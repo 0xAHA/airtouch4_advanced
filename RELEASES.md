@@ -2,6 +2,11 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.1 (Pre-release)
+
+- ✅ Fixed a crash in `AirtouchAC.hvac_modes`/`fan_modes` (`GetSupportedCoolingModesForAc`/`GetSupportedFanSpeedsForAc`) when the AirTouch client briefly returns partial state during a failed update cycle — these now fall back to the last known list instead of crashing the entity update, matching the guards added for `min_temp`/`max_temp` in 2.1.0 (#4)
+- ✅ Added debug logging when the broadcast listener receives data, to help correlate broadcast timing against any state-parsing anomalies
+
 ## Version 2.1.0 (Pre-release)
 
 - ✅ Fixed a bug where a failed connection to the AirTouch4 console could leave the integration's state tracking permanently frozen (coordinator and entity updates would crash on every cycle) until the integration was manually reloaded (#4)
