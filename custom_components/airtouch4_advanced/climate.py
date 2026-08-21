@@ -177,6 +177,10 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
         self._unit = self._airtouch.GetAcs()[ac_number]
         self._attr_unique_id = f"ac_{ac_number}"
         self._attr_name = f"AC {ac_number}"
+        # Fallbacks for fan_modes/hvac_modes if a read ever fails mid-cycle;
+        # updated in place whenever a read succeeds.
+        self._cached_fan_modes: list[str] = []
+        self._cached_hvac_modes: list[HVACMode] = [HVACMode.OFF]
 
     @property
     def _airtouch(self):
@@ -212,8 +216,17 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
 
     @property
     def fan_modes(self) -> list[str]:
-        speeds = self._airtouch.GetSupportedFanSpeedsForAc(self._ac_number)
-        return [AT_TO_HA_FAN_SPEED.get(s, FAN_AUTO) for s in speeds]
+        try:
+            speeds = self._airtouch.GetSupportedFanSpeedsForAc(self._ac_number)
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not read supported fan speeds for AC %s; keeping last known list (%s)",
+                self._ac_number,
+                err,
+            )
+            return self._cached_fan_modes
+        self._cached_fan_modes = [AT_TO_HA_FAN_SPEED.get(s, FAN_AUTO) for s in speeds]
+        return self._cached_fan_modes
 
     @property
     def hvac_mode(self) -> HVACMode:
@@ -224,9 +237,18 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
 
     @property
     def hvac_modes(self) -> list[HVACMode]:
-        raw_modes = self._airtouch.GetSupportedCoolingModesForAc(self._ac_number)
+        try:
+            raw_modes = self._airtouch.GetSupportedCoolingModesForAc(self._ac_number)
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not read supported HVAC modes for AC %s; keeping last known list (%s)",
+                self._ac_number,
+                err,
+            )
+            return self._cached_hvac_modes
         results = [AT_TO_HA_STATE[m] for m in raw_modes if m in AT_TO_HA_STATE]
         results.append(HVACMode.OFF)
+        self._cached_hvac_modes = results
         return results
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:

@@ -86,6 +86,11 @@ class AirtouchBroadcastListener:
                         "AirTouch broadcast connection to %s closed by remote", self._host
                     )
                     return
+                _LOGGER.debug(
+                    "AirTouch broadcast received from %s (%d bytes); requesting refresh",
+                    self._host,
+                    len(data),
+                )
                 self._schedule_refresh()
         finally:
             writer.close()
