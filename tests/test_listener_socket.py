@@ -52,10 +52,21 @@ async def fake_console():
         connections.append(writer)
         client_connected.set()
         try:
-            # Keep the connection open until the test tears it down.
+            # Keep the connection open until the test (or its peer) tears it down.
             await reader.read(-1)
         except asyncio.CancelledError:
             pass
+        finally:
+            # Python 3.12+ changed Server.wait_closed() to also wait for
+            # already-accepted connections to close, not just the listening
+            # socket - explicitly closing here (rather than relying on the
+            # handler's return to do it implicitly) avoids wait_closed()
+            # hanging below if that connection is still considered open.
+            writer.close()
+            try:
+                await writer.wait_closed()
+            except Exception:
+                pass
 
     server = await asyncio.start_server(handle_client, "127.0.0.1", 0)
     port = server.sockets[0].getsockname()[1]
@@ -63,7 +74,10 @@ async def fake_console():
     yield port, connections, client_connected
 
     server.close()
-    await server.wait_closed()
+    # Same Python 3.12+ concern as above, from the other side: bound this
+    # so a connection that somehow never closes fails the test loudly
+    # instead of hanging CI indefinitely.
+    await asyncio.wait_for(server.wait_closed(), timeout=5)
 
 
 async def test_real_socket_echo_right_after_poll_is_suppressed(monkeypatch, fake_console):
