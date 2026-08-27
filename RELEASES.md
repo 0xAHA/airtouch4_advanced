@@ -2,6 +2,12 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.2 (Pre-release)
+
+- ✅ Setup now retries (`ConfigEntryNotReady`) instead of succeeding when the console returns no zones, which previously orphaned all zone/fan entities until a manual reload (#8)
+- ✅ The coordinator now rejects an update cycle as failed if it parses zero zones when zones previously existed, instead of publishing that hollow read as valid state — a likely cause of the intermittent false "off" reads reported in #4
+- The broadcast listener re-triggering on its own polling echoes (#9) is a separate, still-open issue — needs a deliberate fix design rather than a quick patch, since getting the suppression heuristic wrong risks silently dropping genuine external changes
+
 ## Version 2.1.1 (Pre-release)
 
 - ✅ Fixed a crash in `AirtouchAC.hvac_modes`/`fan_modes` (`GetSupportedCoolingModesForAc`/`GetSupportedFanSpeedsForAc`) when the AirTouch client briefly returns partial state during a failed update cycle — these now fall back to the last known list instead of crashing the entity update, matching the guards added for `min_temp`/`max_temp` in 2.1.0 (#4)
