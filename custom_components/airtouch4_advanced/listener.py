@@ -14,16 +14,42 @@ poll via the existing, already-parsed ``airtouch4pyapi`` request/response
 path. If the connection can't be established or drops, it retries with a
 fixed delay and otherwise has no effect on the integration, which keeps
 working via its normal polling.
+
+The console echoes its broadcasts to *every* connected client, including
+this listener's own persistent connection, as a side effect of handling
+the coordinator's ordinary polling requests. Left unchecked that's a
+feedback loop: our poll's echo arrives here, looks like an external
+change, triggers another refresh, whose own echo arrives here, and so on.
+Two independent, protocol-agnostic guards break that loop without ever
+inspecting packet contents:
+
+- Echo suppression: a broadcast arriving shortly after the coordinator's
+  own poll activity (``AirtouchDataUpdateCoordinator.last_poll_activity_at``)
+  is assumed to be that poll's echo and ignored.
+- A minimum interval between listener-triggered refreshes, as a backstop
+  in case the timing assumption above ever doesn't hold.
 """
 
 import asyncio
 import logging
+import time
 
 _LOGGER = logging.getLogger(__name__)
 
 BROADCAST_PORT = 9004
 RECONNECT_DELAY = 10  # seconds between reconnect attempts
 REFRESH_DEBOUNCE = 1  # seconds to coalesce bursts of broadcast packets
+
+# A broadcast arriving within this many seconds of the coordinator's own
+# poll activity is assumed to be that poll's echo, not an external change.
+# Generous relative to observed poll durations (well under 1s), while
+# staying a small fraction of the default 60s scan interval.
+ECHO_SUPPRESSION_WINDOW = 3
+
+# Backstop floor between listener-triggered refreshes, independent of echo
+# suppression above. Bounds the damage of a feedback loop even if the echo
+# heuristic's timing assumption turns out to be wrong on some hardware.
+MIN_REFRESH_INTERVAL = 5
 
 
 class AirtouchBroadcastListener:
@@ -36,6 +62,7 @@ class AirtouchBroadcastListener:
         self._task: asyncio.Task | None = None
         self._refresh_handle: asyncio.TimerHandle | None = None
         self._stopped = False
+        self._last_triggered_at: float = 0.0
 
     def start(self) -> None:
         """Start the background listener task."""
@@ -99,8 +126,20 @@ class AirtouchBroadcastListener:
             except Exception:
                 pass
 
+    def _looks_like_own_echo(self) -> bool:
+        last_poll = getattr(self._coordinator, "last_poll_activity_at", 0.0)
+        return (time.monotonic() - last_poll) < ECHO_SUPPRESSION_WINDOW
+
     def _schedule_refresh(self) -> None:
         """Debounce bursts of broadcast packets into a single refresh."""
+        if self._looks_like_own_echo():
+            _LOGGER.debug(
+                "Ignoring AirTouch broadcast from %s - arrived right after our "
+                "own poll, looks like an echo",
+                self._host,
+            )
+            return
+
         if self._refresh_handle:
             self._refresh_handle.cancel()
         self._refresh_handle = self._hass.loop.call_later(
@@ -108,4 +147,13 @@ class AirtouchBroadcastListener:
         )
 
     def _trigger_refresh(self) -> None:
+        now = time.monotonic()
+        if (now - self._last_triggered_at) < MIN_REFRESH_INTERVAL:
+            _LOGGER.debug(
+                "Skipping AirTouch-broadcast-triggered refresh for %s - within "
+                "minimum refresh interval",
+                self._host,
+            )
+            return
+        self._last_triggered_at = now
         self._hass.async_create_task(self._coordinator.async_request_refresh())
