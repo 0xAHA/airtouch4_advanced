@@ -2,6 +2,11 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.3 (Pre-release)
+
+- ✅ Fixed the broadcast listener re-triggering on its own polling echoes (#9) — the AirTouch4 console echoes status packets to every connected client, including the listener's own persistent connection, as a side effect of the coordinator's ordinary polling. This was a feedback loop: our poll's echo looked like an external change, triggered another refresh, whose echo triggered another. Two protocol-agnostic guards fix it without ever parsing packet contents: broadcasts arriving shortly after the coordinator's own poll activity are now recognised as that poll's echo and ignored, plus a minimum interval between listener-triggered refreshes as a backstop
+- Added a `pytest` test suite (`tests/`) covering the echo-suppression/feedback-loop fix, now running in CI on every push and PR
+
 ## Version 2.1.2 (Pre-release)
 
 - ✅ Setup now retries (`ConfigEntryNotReady`) instead of succeeding when the console returns no zones, which previously orphaned all zone/fan entities until a manual reload (#8)
