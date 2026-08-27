@@ -49,6 +49,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.error("No AC units discovered for %s", host)
             raise ConfigEntryNotReady("No AC units discovered")
 
+        if not coordinator.airtouch.GetGroups():
+            _LOGGER.error("No zones discovered for %s", host)
+            raise ConfigEntryNotReady("No zones discovered")
+
     except Exception as err:
         _LOGGER.exception("Error setting up AirTouch integration: %s", err)
         raise ConfigEntryNotReady(f"Failed to connect to AirTouch at {host}: {err}")

@@ -56,6 +56,21 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
             self._register_failure()
             raise UpdateFailed(f"Error communicating with AirTouch: {err}") from err
 
+        acs = self.airtouch.GetAcs()
+        groups = self.airtouch.GetGroups()
+
+        # A "successful" UpdateInfo() can still hand back a hollow/partial
+        # read (e.g. zero groups) with no exception and no bad Status - seen
+        # in the wild as a transient false "off" state. If we previously had
+        # groups and this cycle suddenly has none, treat it as a failed
+        # cycle rather than publishing bogus state.
+        had_groups_before = bool(self.data and self.data.get("groups"))
+        if had_groups_before and not groups:
+            self._register_failure()
+            raise UpdateFailed(
+                "AirTouch returned no zones on this poll; skipping cycle"
+            )
+
         self._consecutive_failures = 0
         return {
             "acs": [
@@ -70,7 +85,7 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     "min_setpoint": getattr(ac, "MinSetpoint", 16),
                     "max_setpoint": getattr(ac, "MaxSetpoint", 30),
                 }
-                for ac in self.airtouch.GetAcs()
+                for ac in acs
             ],
             "groups": [
                 {
@@ -84,6 +99,6 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     "temperature": getattr(group, "Temperature", None),
                     "target_setpoint": getattr(group, "TargetSetpoint", None),
                 }
-                for group in self.airtouch.GetGroups()
+                for group in groups
             ],
         }
