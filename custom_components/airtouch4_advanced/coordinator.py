@@ -84,6 +84,44 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     "AirTouch returned no zones on this poll; skipping cycle"
                 )
 
+            # Same failure mode, symmetric case: the AC-status portion of a
+            # cycle can go hollow while groups parse fine (and vice versa) -
+            # the two exchanges apparently fail independently. Total AC
+            # dropout mirrors the zones check above:
+            had_acs_before = bool(self.data and self.data.get("acs"))
+            if had_acs_before and not acs:
+                self._register_failure()
+                raise UpdateFailed(
+                    "AirTouch returned no AC units on this poll; skipping cycle"
+                )
+
+            # Narrower case, confirmed in the field (#4): groups and the AC
+            # list both parse, but an individual AC's own status is hollow -
+            # Temperature reads None where the previous cycle had a real
+            # value, with IsOn/PowerState defaulting to "off" alongside it.
+            # This is the AC-status exchange specifically returning a
+            # wrong/empty payload; compared per-AC (by ac_number) rather than
+            # "any AC still looks fine", so a hollow read on one AC in a
+            # multi-AC system isn't masked by another AC that's still healthy.
+            # Temperature-only, deliberately: PowerState/IsOn alone can't be
+            # used as a hollow signal since a genuinely-off AC looks the same.
+            previous_acs_by_number = {
+                ac_data["ac_number"]: ac_data
+                for ac_data in (self.data or {}).get("acs", [])
+            }
+            for ac in acs:
+                previous = previous_acs_by_number.get(ac.AcNumber)
+                if (
+                    previous is not None
+                    and previous.get("temperature") is not None
+                    and getattr(ac, "Temperature", None) is None
+                ):
+                    self._register_failure()
+                    raise UpdateFailed(
+                        f"AirTouch AC {ac.AcNumber} status looks hollow on "
+                        "this poll; skipping cycle"
+                    )
+
             self._consecutive_failures = 0
             return {
                 "acs": [

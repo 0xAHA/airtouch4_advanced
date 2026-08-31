@@ -1,7 +1,7 @@
 # 🌡️ AirTouch4 Advanced
 
 ![HACS Badge](https://img.shields.io/badge/HACS-Custom-orange.svg)
-![Version](https://img.shields.io/badge/Version-2.1.3-blue.svg)
+![Version](https://img.shields.io/badge/Version-2.1.4-blue.svg)
 
 <a href="https://www.buymeacoffee.com/0xAHA" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-orange.png" alt="Buy Me A Coffee" height="41" width="174"></a>
 
