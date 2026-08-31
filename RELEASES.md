@@ -2,6 +2,11 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.4 (Pre-release)
+
+- ✅ Added a guard for a false "off" reading variant reported in #4: a poll can report success with groups parsing correctly while an individual AC's own status is hollow (temperature reads `None` where the previous cycle had a real value). Compared per-AC rather than "any AC still looks fine", so a hollow read on one AC in a multi-AC system isn't masked by another AC that's still healthy. Also added the symmetric case of the AC list itself going from populated to empty, matching the existing zero-zones guard
+- This is a mitigation, not a root-cause fix: the actual bad AC-status read happens inside `airtouch4pyapi`, a separate pinned dependency this repo doesn't maintain the source of, so it's outside what we can fix directly without forking or vendoring a modified copy of it — not something taken on here
+
 ## Version 2.1.3 (Pre-release)
 
 - ✅ Fixed the broadcast listener re-triggering on its own polling echoes (#9) — the AirTouch4 console echoes status packets to every connected client, including the listener's own persistent connection, as a side effect of the coordinator's ordinary polling. This was a feedback loop: our poll's echo looked like an external change, triggered another refresh, whose echo triggered another. Two protocol-agnostic guards fix it without ever parsing packet contents: broadcasts arriving shortly after the coordinator's own poll activity are now recognised as that poll's echo and ignored, plus a minimum interval between listener-triggered refreshes as a backstop
