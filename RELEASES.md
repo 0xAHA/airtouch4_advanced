@@ -2,6 +2,10 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.5 (Pre-release)
+
+- ✅ Softened the hollow-AC-status guard added in 2.1.4: field testing showed it rejecting the whole poll cycle (flipping every entity unavailable for ~60s) far more often than genuine connection failures, since the console appears to legitimately omit an AC's temperature on some polls rather than only during real corruption. The guard now repairs a hollow AC from its last known snapshot and lets the cycle succeed for up to 2 consecutive hollow reads on that AC; only the 3rd in a row rejects the cycle, by which point it looks like a genuine problem rather than a one-poll reporting gap
+
 ## Version 2.1.4 (Pre-release)
 
 - ✅ Added a guard for a false "off" reading variant reported in #4: a poll can report success with groups parsing correctly while an individual AC's own status is hollow (temperature reads `None` where the previous cycle had a real value). Compared per-AC rather than "any AC still looks fine", so a hollow read on one AC in a multi-AC system isn't masked by another AC that's still healthy. Also added the symmetric case of the AC list itself going from populated to empty, matching the existing zero-zones guard
