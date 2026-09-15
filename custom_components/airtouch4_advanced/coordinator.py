@@ -15,6 +15,14 @@ _LOGGER = logging.getLogger(__name__)
 # half-initialised state that a fresh UpdateInfo() call can't recover from.
 RECONNECT_AFTER_FAILURES = 3
 
+# Number of consecutive hollow-temperature reads tolerated for a single AC
+# before it's treated as a genuine failure rather than a benign one-poll
+# reporting gap. Below this, the AC's previous known-good snapshot is reused
+# ("repaired") and the cycle still succeeds; at or above it, the cycle is
+# rejected like any other failure. Mirrors RECONNECT_AFTER_FAILURES's
+# 3-strike pattern.
+AC_HOLLOW_REPAIR_LIMIT = 3
+
 class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
     """Class to manage fetching AirTouch data."""
 
@@ -28,6 +36,9 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
         # listener to recognise its own poll's echo and avoid retriggering
         # itself - see AirtouchBroadcastListener.
         self.last_poll_activity_at: float = 0.0
+        # Per-AC (by ac_number) count of consecutive hollow-temperature
+        # reads - see AC_HOLLOW_REPAIR_LIMIT and the repair logic below.
+        self._ac_hollow_streak: dict[int, int] = {}
         super().__init__(
             hass,
             _LOGGER,
@@ -105,39 +116,70 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
             # multi-AC system isn't masked by another AC that's still healthy.
             # Temperature-only, deliberately: PowerState/IsOn alone can't be
             # used as a hollow signal since a genuinely-off AC looks the same.
+            #
+            # Field data showed this guard's original reject-the-cycle
+            # behaviour firing far more often than genuine connection
+            # failures (the console appears to legitimately omit AC
+            # temperature on some polls, not just during real corruption),
+            # and rejecting flips every entity unavailable for ~60s each
+            # time. So: repair a hollow AC from its last known snapshot and
+            # let the cycle succeed for the first AC_HOLLOW_REPAIR_LIMIT
+            # consecutive hollow reads on that AC; only reject the cycle
+            # once that streak is exceeded, by which point it looks like a
+            # genuine problem rather than a one-poll reporting gap.
             previous_acs_by_number = {
                 ac_data["ac_number"]: ac_data
                 for ac_data in (self.data or {}).get("acs", [])
             }
+
+            ac_dicts = []
             for ac in acs:
+                ac_dict = {
+                    "ac_number": ac.AcNumber,
+                    "ac_name": getattr(ac, "AcName", f"AC {ac.AcNumber}"),
+                    "is_on": ac.IsOn,
+                    "power_state": getattr(ac, "PowerState", "Off"),
+                    "ac_mode": getattr(ac, "AcMode", "Fan"),
+                    "fan_speed": getattr(ac, "AcFanSpeed", "Auto"),
+                    "temperature": getattr(ac, "Temperature", None),
+                    "min_setpoint": getattr(ac, "MinSetpoint", 16),
+                    "max_setpoint": getattr(ac, "MaxSetpoint", 30),
+                }
+
                 previous = previous_acs_by_number.get(ac.AcNumber)
-                if (
+                is_hollow = (
                     previous is not None
                     and previous.get("temperature") is not None
-                    and getattr(ac, "Temperature", None) is None
-                ):
+                    and ac_dict["temperature"] is None
+                )
+                if not is_hollow:
+                    self._ac_hollow_streak.pop(ac.AcNumber, None)
+                    ac_dicts.append(ac_dict)
+                    continue
+
+                streak = self._ac_hollow_streak.get(ac.AcNumber, 0) + 1
+                self._ac_hollow_streak[ac.AcNumber] = streak
+                if streak >= AC_HOLLOW_REPAIR_LIMIT:
                     self._register_failure()
                     raise UpdateFailed(
                         f"AirTouch AC {ac.AcNumber} status looks hollow on "
-                        "this poll; skipping cycle"
+                        f"this poll ({streak} in a row); skipping cycle"
                     )
+
+                _LOGGER.debug(
+                    "AirTouch AC %s temperature read hollow (streak %d/%d); "
+                    "repairing from last known value (%s) instead of "
+                    "failing the cycle",
+                    ac.AcNumber,
+                    streak,
+                    AC_HOLLOW_REPAIR_LIMIT,
+                    previous.get("temperature"),
+                )
+                ac_dicts.append(previous)
 
             self._consecutive_failures = 0
             return {
-                "acs": [
-                    {
-                        "ac_number": ac.AcNumber,
-                        "ac_name": getattr(ac, "AcName", f"AC {ac.AcNumber}"),
-                        "is_on": ac.IsOn,
-                        "power_state": getattr(ac, "PowerState", "Off"),
-                        "ac_mode": getattr(ac, "AcMode", "Fan"),
-                        "fan_speed": getattr(ac, "AcFanSpeed", "Auto"),
-                        "temperature": getattr(ac, "Temperature", None),
-                        "min_setpoint": getattr(ac, "MinSetpoint", 16),
-                        "max_setpoint": getattr(ac, "MaxSetpoint", 30),
-                    }
-                    for ac in acs
-                ],
+                "acs": ac_dicts,
                 "groups": [
                     {
                         "group_number": group.GroupNumber,
