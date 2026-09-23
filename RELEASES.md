@@ -2,6 +2,10 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.6 (Pre-release)
+
+- ✅ Fixed `AirtouchAC.async_set_hvac_mode`/`async_set_fan_mode` (`climate.py`) crashing with `IndexError: list index out of range` when the local cache refresh after a mode/fan change lands during the integration's brief unavailable/reconnect window. The real command had already been sent by that point, so the exception was only breaking the local state refresh - but since it propagated up through the `climate.set_hvac_mode`/`climate.set_fan_mode` service calls, it could abort a calling automation at that step. Now matches the existing guard pattern used by `hvac_modes`/`fan_modes`: falls back gracefully and lets the next poll pick up the real state instead of raising (#14)
+
 ## Version 2.1.5 (Pre-release)
 
 - ✅ Softened the hollow-AC-status guard added in 2.1.4: field testing showed it rejecting the whole poll cycle (flipping every entity unavailable for ~60s) far more often than genuine connection failures, since the console appears to legitimately omit an AC's temperature on some polls rather than only during real corruption. The guard now repairs a hollow AC from its last known snapshot and lets the cycle succeed for up to 2 consecutive hollow reads on that AC; only the 3rd in a row rejects the cycle, by which point it looks like a genuine problem rather than a one-poll reporting gap

@@ -260,7 +260,17 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
         raw_mode = HA_STATE_TO_AT[hvac_mode]
         await self._airtouch.SetCoolingModeForAc(self._ac_number, raw_mode)
         await self._airtouch.TurnAcOn(self._ac_number)
-        self._unit = self._airtouch.GetAcs()[self._ac_number]
+        try:
+            self._unit = self._airtouch.GetAcs()[self._ac_number]
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not refresh cached state for AC %s after mode change "
+                "(%s); the command was still sent - the next poll will pick "
+                "up the real state",
+                self._ac_number,
+                err,
+            )
+            return
         self.async_write_ha_state()
 
     async def async_set_fan_mode(self, fan_mode: str) -> None:
@@ -268,7 +278,17 @@ class AirtouchAC(CoordinatorEntity, ClimateEntity):
             raise ValueError(f"Unsupported fan mode: {fan_mode}")
         raw_speed = {v: k for k, v in AT_TO_HA_FAN_SPEED.items()}.get(fan_mode, "Auto")
         await self._airtouch.SetFanSpeedForAc(self._ac_number, raw_speed)
-        self._unit = self._airtouch.GetAcs()[self._ac_number]
+        try:
+            self._unit = self._airtouch.GetAcs()[self._ac_number]
+        except (IndexError, KeyError, AttributeError) as err:
+            _LOGGER.warning(
+                "Could not refresh cached state for AC %s after fan mode "
+                "change (%s); the command was still sent - the next poll "
+                "will pick up the real state",
+                self._ac_number,
+                err,
+            )
+            return
         self.async_write_ha_state()
 
     async def async_turn_on(self) -> None:
