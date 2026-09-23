@@ -2,7 +2,7 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
-## Version 2.1.6 (Pre-release)
+## Version 2.1.6
 
 - ✅ Fixed `AirtouchAC.async_set_hvac_mode`/`async_set_fan_mode` (`climate.py`) crashing with `IndexError: list index out of range` when the local cache refresh after a mode/fan change lands during the integration's brief unavailable/reconnect window. The real command had already been sent by that point, so the exception was only breaking the local state refresh - but since it propagated up through the `climate.set_hvac_mode`/`climate.set_fan_mode` service calls, it could abort a calling automation at that step. Now matches the existing guard pattern used by `hvac_modes`/`fan_modes`: falls back gracefully and lets the next poll pick up the real state instead of raising (#14)
 
