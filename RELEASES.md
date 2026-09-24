@@ -2,6 +2,10 @@
 
 All notable changes to AirTouch4 Advanced are tracked in this file.
 
+## Version 2.1.7
+
+- ✅ Widened the hollow-AC repair guard from 2.1.4/2.1.5: it previously only detected a hollow read via `Temperature` regressing to `None`, so `PowerState`/`AcMode`/`IsOn` going missing *without* `Temperature` also going hollow slipped straight through to their hardcoded defaults (`"Off"`/`"Fan"`) instead of being repaired - causing a genuinely-on AC to briefly report `off` and self-correct 40-60s later, confusing automations that treat a mode change as a manual override. Detection now checks whether each of those attributes is genuinely *absent* from the read (not just whether its value happens to look like "Off"), so a real off/idle AC is never mistaken for a hollow one, and any of the four fields going missing now triggers the same repair-then-reject-after-3 handling already used for temperature (#16)
+
 ## Version 2.1.6
 
 - ✅ Fixed `AirtouchAC.async_set_hvac_mode`/`async_set_fan_mode` (`climate.py`) crashing with `IndexError: list index out of range` when the local cache refresh after a mode/fan change lands during the integration's brief unavailable/reconnect window. The real command had already been sent by that point, so the exception was only breaking the local state refresh - but since it propagated up through the `climate.set_hvac_mode`/`climate.set_fan_mode` service calls, it could abort a calling automation at that step. Now matches the existing guard pattern used by `hvac_modes`/`fan_modes`: falls back gracefully and lets the next poll pick up the real state instead of raising (#14)
