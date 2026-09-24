@@ -10,12 +10,17 @@ from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+# Sentinel distinguishing "this AC object genuinely has no such attribute"
+# from a real value (including a real "Off"/"Fan") - see the hollow-AC
+# detection in _async_update_data, which needs the former, not the latter.
+_MISSING = object()
+
 # Number of consecutive failed updates after which the AirTouch client is
 # recreated from scratch, in case a failed exchange left it in a poisoned
 # half-initialised state that a fresh UpdateInfo() call can't recover from.
 RECONNECT_AFTER_FAILURES = 3
 
-# Number of consecutive hollow-temperature reads tolerated for a single AC
+# Number of consecutive hollow AC-status reads tolerated for a single AC
 # before it's treated as a genuine failure rather than a benign one-poll
 # reporting gap. Below this, the AC's previous known-good snapshot is reused
 # ("repaired") and the cycle still succeeds; at or above it, the cycle is
@@ -106,27 +111,36 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     "AirTouch returned no AC units on this poll; skipping cycle"
                 )
 
-            # Narrower case, confirmed in the field (#4): groups and the AC
-            # list both parse, but an individual AC's own status is hollow -
-            # Temperature reads None where the previous cycle had a real
-            # value, with IsOn/PowerState defaulting to "off" alongside it.
-            # This is the AC-status exchange specifically returning a
-            # wrong/empty payload; compared per-AC (by ac_number) rather than
-            # "any AC still looks fine", so a hollow read on one AC in a
-            # multi-AC system isn't masked by another AC that's still healthy.
-            # Temperature-only, deliberately: PowerState/IsOn alone can't be
-            # used as a hollow signal since a genuinely-off AC looks the same.
+            # Narrower case, confirmed in the field (#4, #16): groups and the
+            # AC list both parse, but an individual AC's own status is
+            # hollow - one or more of Temperature/PowerState/AcMode/IsOn is
+            # simply absent from that read, with no exception and nothing
+            # loud enough to raise. This is the AC-status exchange
+            # specifically returning a wrong/empty payload; compared per-AC
+            # (by ac_number) rather than "any AC still looks fine", so a
+            # hollow read on one AC in a multi-AC system isn't masked by
+            # another AC that's still healthy.
+            #
+            # Detection has to look at whether the *attribute itself* is
+            # missing (via the _MISSING sentinel below), not whether the
+            # already-defaulted value looks like "Off"/"Fan" - a genuinely
+            # off AC has those as real values, not absent ones, so it can't
+            # be told apart from a hollow read by value alone (#16). That's
+            # also why PowerState/IsOn were deliberately excluded from the
+            # original temperature-only detector - this fixes that gap by
+            # checking absence instead of value.
             #
             # Field data showed this guard's original reject-the-cycle
             # behaviour firing far more often than genuine connection
-            # failures (the console appears to legitimately omit AC
-            # temperature on some polls, not just during real corruption),
-            # and rejecting flips every entity unavailable for ~60s each
-            # time. So: repair a hollow AC from its last known snapshot and
-            # let the cycle succeed for the first AC_HOLLOW_REPAIR_LIMIT
-            # consecutive hollow reads on that AC; only reject the cycle
-            # once that streak is exceeded, by which point it looks like a
-            # genuine problem rather than a one-poll reporting gap.
+            # failures (the console appears to legitimately omit parts of
+            # an AC's status on some polls, not just during real
+            # corruption), and rejecting flips every entity unavailable for
+            # ~60s each time. So: repair a hollow AC from its last known
+            # snapshot and let the cycle succeed for the first
+            # AC_HOLLOW_REPAIR_LIMIT consecutive hollow reads on that AC;
+            # only reject the cycle once that streak is exceeded, by which
+            # point it looks like a genuine problem rather than a one-poll
+            # reporting gap.
             previous_acs_by_number = {
                 ac_data["ac_number"]: ac_data
                 for ac_data in (self.data or {}).get("acs", [])
@@ -134,23 +148,31 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
 
             ac_dicts = []
             for ac in acs:
+                raw_temperature = getattr(ac, "Temperature", None)
+                raw_power_state = getattr(ac, "PowerState", _MISSING)
+                raw_ac_mode = getattr(ac, "AcMode", _MISSING)
+                raw_is_on = getattr(ac, "IsOn", _MISSING)
+
                 ac_dict = {
                     "ac_number": ac.AcNumber,
                     "ac_name": getattr(ac, "AcName", f"AC {ac.AcNumber}"),
-                    "is_on": ac.IsOn,
-                    "power_state": getattr(ac, "PowerState", "Off"),
-                    "ac_mode": getattr(ac, "AcMode", "Fan"),
+                    "is_on": raw_is_on if raw_is_on is not _MISSING else False,
+                    "power_state": (
+                        raw_power_state if raw_power_state is not _MISSING else "Off"
+                    ),
+                    "ac_mode": raw_ac_mode if raw_ac_mode is not _MISSING else "Fan",
                     "fan_speed": getattr(ac, "AcFanSpeed", "Auto"),
-                    "temperature": getattr(ac, "Temperature", None),
+                    "temperature": raw_temperature,
                     "min_setpoint": getattr(ac, "MinSetpoint", 16),
                     "max_setpoint": getattr(ac, "MaxSetpoint", 30),
                 }
 
                 previous = previous_acs_by_number.get(ac.AcNumber)
-                is_hollow = (
-                    previous is not None
-                    and previous.get("temperature") is not None
-                    and ac_dict["temperature"] is None
+                is_hollow = previous is not None and (
+                    (previous.get("temperature") is not None and raw_temperature is None)
+                    or raw_power_state is _MISSING
+                    or raw_ac_mode is _MISSING
+                    or raw_is_on is _MISSING
                 )
                 if not is_hollow:
                     self._ac_hollow_streak.pop(ac.AcNumber, None)
@@ -167,13 +189,12 @@ class AirtouchDataUpdateCoordinator(DataUpdateCoordinator):
                     )
 
                 _LOGGER.debug(
-                    "AirTouch AC %s temperature read hollow (streak %d/%d); "
-                    "repairing from last known value (%s) instead of "
+                    "AirTouch AC %s status read hollow (streak %d/%d); "
+                    "repairing from last known snapshot instead of "
                     "failing the cycle",
                     ac.AcNumber,
                     streak,
                     AC_HOLLOW_REPAIR_LIMIT,
-                    previous.get("temperature"),
                 )
                 ac_dicts.append(previous)
 
